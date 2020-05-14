@@ -1,0 +1,3 @@
+pct_loss:                     0.1
+distr:                              'linear'
+diff_max_min:                       2.

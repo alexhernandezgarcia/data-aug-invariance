@@ -1,0 +1,49 @@
+network: 
+  name: wrn
+  depth: orig
+  reg:
+    dropout: False
+    weight_decay: !!null
+  batch_norm: True
+  blocks_per_group: 4
+  widening_factor: 10
+optimizer:
+  name: SGD
+  loss: categorical_crossentropy
+  momentum: 0.9
+  nesterov: True
+  daug_invariance_params_file: noinv.yml
+  class_invariance_params_file: noinv.yml
+train:
+  lr:
+    init_lr: 0.01 
+    decay_factor: 0.2
+    decay_epochs: [30, 40]
+  batch_size:
+    tr: 32
+    val: 32
+  epochs: 50
+  simulate:
+    bs_lr: bs # bs or lr
+    rep_samples: !!null
+    norep_samples: False
+    true_epochs: False
+data:
+  data_file: /mnt/data/alex/datasets/hdf5/tinyimagenet.hdf5
+  group_tr: train
+  group_val: val
+  shuffle_train_val: False
+  chunk_size: !!null
+  queue_size: 50
+daug:
+  nodaug: nodaug.yml
+  daug_params_file: nodaug.yml
+  aug_per_img_tr: 1
+  aug_per_img_val: 1
+seeds:
+  tf: 33
+  np: 39
+  daug: 59
+  batch_shuffle: 47
+  train_val: 27
+metrics: [accuracy, top3]

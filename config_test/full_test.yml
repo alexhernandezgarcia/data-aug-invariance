@@ -1,0 +1,80 @@
+test:
+    orig:
+      daug_params: nodaug.yml
+      metrics: 
+        - accuracy 
+        - top3
+    daug:
+      light: 
+        daug_params: light.yml
+        repetitions: 5
+        metrics: 
+          - accuracy 
+          - top3
+      heavier: 
+        daug_params: heavier.yml
+        repetitions: 5
+        metrics: 
+          - accuracy 
+          - top3
+      gaussian: 
+        daug_params: gaussian.yml
+        repetitions: 5
+        metrics: 
+          - accuracy 
+          - top3
+train:
+    orig:
+      daug_params: nodaug.yml
+      metrics: 
+        - accuracy 
+        - top3
+    daug:
+      light: 
+        daug_params: light.yml
+        repetitions: 3
+        metrics: 
+          - accuracy 
+          - top3
+      heavier: 
+        daug_params: heavier.yml
+        repetitions: 3
+        metrics: 
+          - accuracy 
+          - top3
+      gaussian: 
+        daug_params: gaussian.yml
+        repetitions: 3
+        metrics: 
+          - accuracy 
+          - top3
+ablation:
+  pct: [0.01, 0.02, 0.03, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5]
+  layer_regex: '.*relu.*'
+  daug_params: nodaug.yml
+  metrics: 
+    - accuracy 
+    - top3
+  repetitions: 5
+  seed: !!null
+  train: True
+  test: True
+adv:
+  attacks:
+    - attacks/fgsm.yml
+    - attacks/pgd.yml
+  daug_params: nodaug.yml
+  black_box_model: !!null
+  pct_data: 0.1
+  shuffle_data: True
+  shuffle_seed: 79
+activations:
+  layer_regex: '.*relu.*'
+  daug_params: half_heavier_extremes.yml
+  nodaug_params: nodaug.yml
+  include_input: True
+  class_invariance: False
+  n_daug_rep: 3
+  norms:
+    - fro
+    - inf

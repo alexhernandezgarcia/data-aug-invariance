@@ -1,0 +1,3 @@
+pct_loss:                           0.9
+distr:                              'exponential'
+diff_max_min:                       10.

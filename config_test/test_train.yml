@@ -1,0 +1,50 @@
+test:
+    orig:
+      daug_params: nodaug.yml
+      metrics: 
+        - accuracy 
+        - top3
+    daug:
+      light: 
+        daug_params: light.yml
+        repetitions: 5
+        metrics: 
+          - accuracy 
+          - top3
+      heavier: 
+        daug_params: heavier.yml
+        repetitions: 5
+        metrics: 
+          - accuracy 
+          - top3
+      gaussian: 
+        daug_params: gaussian.yml
+        repetitions: 5
+        metrics: 
+          - accuracy 
+          - top3
+train:
+    orig:
+      daug_params: nodaug.yml
+      metrics: 
+        - accuracy 
+        - top3
+    daug:
+      light: 
+        daug_params: light.yml
+        repetitions: 3
+        metrics: 
+          - accuracy 
+          - top3
+      heavier: 
+        daug_params: heavier.yml
+        repetitions: 3
+        metrics: 
+          - accuracy 
+          - top3
+      gaussian: 
+        daug_params: gaussian.yml
+        repetitions: 3
+        metrics: 
+          - accuracy 
+          - top3

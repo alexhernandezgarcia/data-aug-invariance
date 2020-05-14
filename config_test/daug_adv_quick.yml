@@ -1,0 +1,22 @@
+test:
+    orig:
+      daug_params: nodaug.yml
+      metrics: 
+        - accuracy 
+        - top3
+    daug:
+      light: 
+        daug_params: light.yml
+        repetitions: 3
+        metrics: 
+          - accuracy 
+          - top3
+adv:
+  attacks:
+    - attacks/fgsm.yml
+    - attacks/pgd.yml
+  daug_params: nodaug.yml
+  black_box_model: '/mnt/data/alex/tf_log/ica/cifar10/080/allcnn/sgd/noreg/bn/no-inbatch/heavier/r0/model_final'
+  pct_data: 0.1
+  shuffle_data: True
+  shuffle_seed: 79

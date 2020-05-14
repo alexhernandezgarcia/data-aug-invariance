@@ -1,0 +1,11 @@
+adv:
+  attacks:
+    - attacks/fgsm.yml
+    - attacks/pgd.yml
+  daug_params: nodaug.yml
+  black_box_model:
+  pct_data: 0.1
+  shuffle_data: True
+  shuffle_seed: 79
+
+

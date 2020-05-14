@@ -1,0 +1,5 @@
+attack:                           'pgd'
+eps:                              [0.003, 0.03, 0.3]
+eps_iter:                         0.01  
+n_steps:                          40
+rand_start:                       True

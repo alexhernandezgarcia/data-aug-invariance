@@ -1,0 +1,13 @@
+# Configuration according to: https://github.com/MadryLab/mnist_challenge/blob/master/config.json
+network_name:                       'lenet'
+optimizer:                          'Adam'
+loss:                               'categorical_crossentropy'
+batch_size:                         50
+max_steps:                          85
+initial_lr:                         0.0001 
+lr_decay_factor:                    1.
+decay_epochs:                       []
+dropout:                            False
+weight_decay:                       !!null
+batch_norm:                         False
+shuffle:                            False

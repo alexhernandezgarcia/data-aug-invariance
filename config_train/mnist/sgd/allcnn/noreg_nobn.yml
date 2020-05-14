@@ -1,0 +1,15 @@
+network_name:                       'allcnn'
+optimizer:                          'SGD'
+loss:                               'categorical_crossentropy'
+momentum:                           0.9
+nesterov:                           True
+batch_size:                         50
+max_steps:                          50
+initial_lr:                         0.01 
+lr_decay_factor:                    0.1
+decay_epochs:                       [25, 40]
+dropout:                            False
+weight_decay:                       !!null
+batch_norm:                         False
+depth:                              'shallower'
+shuffle:                            False

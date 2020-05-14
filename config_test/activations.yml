@@ -1,0 +1,10 @@
+activations:
+  layer_regex: '.*relu.*'
+  daug_params: half_heavier_extremes.yml
+  nodaug_params: nodaug.yml
+  include_input: True
+  class_invariance: True
+  n_daug_rep: 3
+  norms:
+    - fro
+    - inf

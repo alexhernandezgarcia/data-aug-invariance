@@ -1,0 +1,10 @@
+ablation:
+  pct: [0.5]
+  layer_regex: '.*relu.*'
+  daug_params: nodaug.yml
+  metrics: 
+    - accuracy
+  repetitions: 3
+  seed: 19
+  train: True
+  test: True

@@ -1,0 +1,49 @@
+network: 
+  name: allcnn_large
+  depth: orig
+  reg:
+    dropout: False
+    weight_decay: !!null
+  batch_norm: True
+  stride_conv1: 2
+optimizer:
+  name: SGD
+  loss: categorical_crossentropy
+  momentum: 0.9
+  nesterov: True
+  daug_invariance_params_file: noinv.yml
+  class_invariance_params_file: noinv.yml
+train:
+  lr:
+    init_lr: 0.1 
+    decay_factor: 0.1
+    decay_epochs: [10, 20]
+  batch_size:
+    tr: 64
+    val: 64
+  epochs: 25
+  simulate:
+    bs_lr: bs # bs or lr
+    rep_samples: !!null
+    norep_samples: False
+    true_epochs: False
+data:
+  data_file: /mnt/data/alex/datasets/hdf5/imagenet_150x200.hdf5
+  group_tr: imagenet_train
+  group_val: imagenet_test
+  shuffle_train_val: False
+  pct_val: 0.2
+  chunk_size: 50000
+  queue_size: 100
+daug:
+  nodaug: nodaug.yml
+  daug_params_file: nodaug.yml
+  aug_per_img_tr: 1
+  aug_per_img_val: 1
+seeds:
+  tf: 33
+  np: 39
+  daug: 59
+  batch_shuffle: 47
+  train_val: 27
+metrics: [accuracy, top5]

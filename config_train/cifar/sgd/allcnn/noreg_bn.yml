@@ -1,0 +1,47 @@
+network: 
+  name: allcnn
+  depth: orig
+  reg:
+    dropout: False
+    weight_decay: !!null
+  batch_norm: True
+optimizer:
+  name: SGD
+  loss: categorical_crossentropy
+  momentum: 0.9
+  nesterov: True
+  daug_invariance_params_file: noinv.yml
+  class_invariance_params_file: noinv.yml
+train:
+  lr:
+    init_lr: 0.01 
+    decay_factor: 0.1
+    decay_epochs: [200, 250, 300]
+  batch_size:
+    tr: 128
+    val: 128
+  epochs: 350
+  simulate:
+    bs_lr: bs # bs or lr
+    rep_samples: !!null
+    norep_samples: False
+    true_epochs: False
+data:
+  data_file: ~/datasets/hdf5/cifar10.hdf5
+  group_tr: cifar10_train
+  group_val: cifar10_test
+  shuffle_train_val: False
+  chunk_size: !!null
+  queue_size: 50
+daug:
+  nodaug: nodaug.yml
+  daug_params_file: nodaug.yml
+  aug_per_img_tr: 1
+  aug_per_img_val: 1
+seeds:
+  tf: 33
+  np: 39
+  daug: 59
+  batch_shuffle: 47
+  train_val: 27
+metrics: [accuracy, top3]
