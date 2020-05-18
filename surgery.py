@@ -432,7 +432,7 @@ def del_mse_nodes(model, log_file=None, verbose=1):
                     if node not in relevant_nodes:
                         inbound_nodes.remove(node)
                         if verbose > 0:
-                            print('Removed node {} from layer {}'.format(
+                            print('Removed (mse) node {} from layer {}'.format(
                                 node, layer.name))
             if layer.outbound_nodes:
                 outbound_nodes = layer.outbound_nodes
@@ -440,7 +440,7 @@ def del_mse_nodes(model, log_file=None, verbose=1):
                     if node not in relevant_nodes:
                         outbound_nodes.remove(node)
                         if verbose > 0:
-                            print('Removed node {} from layer {}'.format(
+                            print('Removed (mse) node {} from layer {}'.format(
                                 node, layer.name))
 
     def del_extra_nodes(layer, softmax):
@@ -452,14 +452,14 @@ def del_mse_nodes(model, log_file=None, verbose=1):
                             outnode.outbound_layer, softmax):
                         outbound_nodes.remove(outnode)
                         if verbose > 0:
-                            print('Removed node {} from layer {}'.format(
+                            print('Removed (mse) node {} from layer {}'.format(
                                 outnode, layer.name))
                 elif outnode.outbound_layers:
                     for out_layer in outnode.outbound_layers:
                         if not connected_to_softmax(out_layer, softmax):
                             outbound_nodes.remove(outnode)
                         if verbose > 0:
-                            print('Removed node {} from layer {}'.format(
+                            print('Removed (mse) node {} from layer {}'.format(
                                 innode, layer.name))
                 else:
                     pass

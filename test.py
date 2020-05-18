@@ -24,6 +24,7 @@ from data_input import train_val_split, get_generator, subsample_data
 from data_input import generate_batches
 from adv_utils import init_attack
 from surgery import ablate_activations, del_mse_nodes, del_extra_nodes
+from surgery import network2dict, restore_nodes
 
 from utils import print_flags
 from utils import pairwise_loss, invariance_loss, mean_loss
@@ -406,16 +407,19 @@ def test_ablation(images, labels, batch_size, model, daug_params, repetitions,
     test_rep()
     ablate_activations()
     """
+    network_dict = network2dict(model)
+
     # Perform ablation (drop a set of the units)
-    model = ablate_activations(model, layer_regex, ablation_pct, seed)
+    model_ablation = ablate_activations(model, layer_regex, ablation_pct, seed)
     
     results_dict = {}
     for r in range(repetitions):
-        rep_dict =  test_rep(images, labels, batch_size, model,
+        rep_dict =  test_rep(images, labels, batch_size, model_ablation,
                                  daug_params, 1, metrics)
-        model = del_extra_nodes(model)
         results_dict.update({r: rep_dict})
     results_dict = _stats_from_ablation_rep(results_dict)
+
+    model = restore_nodes(model, network_dict)
 
     return results_dict
 
