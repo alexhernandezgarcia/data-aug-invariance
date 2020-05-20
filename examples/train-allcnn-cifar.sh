@@ -8,4 +8,12 @@
 # All-CNN 
 #
 # no-reg bn heavier no-inv
-python train.py --data_file ~/datasets/hdf5/cifar10.hdf5 --group_tr train --group_val test --train_dir ./log/cifar10/allcnn/noreg/bn/noinv/r0/ --daug_params heavier.yml --train_config_file config_train/cifar/sgd/allcnn/noreg_bn.yml --test_config config_test/daug_quick.yml --save_model_every 0
+python train.py \
+--data_file ~/datasets/hdf5/cifar10.hdf5 \
+--group_tr train \
+--group_val test \
+--train_dir ./log/cifar10/allcnn/noreg/bn/noinv/r0/ \
+--daug_params heavier.yml \
+--train_config_file config_train/cifar/sgd/allcnn/noreg_bn.yml \
+--test_config config_test/daug_quick.yml \
+--save_model_every 0
