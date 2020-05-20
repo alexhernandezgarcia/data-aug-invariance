@@ -5,6 +5,9 @@ This repository contains part of the code of research projects developed by [Ale
 ## Disclaimer about versions
 Please note that the current version has not been tested with the most up to date version of the libraries. In particular, the functionality has been tested with Python 2.7 (although it is highly likely to work with Python 3), Keras 2.1.2 and TensorFlow 1.3.0. I am currently working on ensuring that the scripts run also with Python 3, as well as upgrading the functionality to Keras 2.3 and TensorFlow 2. 
 
+## Usage
+Have a look at the shell scripts in [examples](./examples) to find out some of the options that this project offers. Note that one of the main features is the flexibility to easily change aspects of the training process (regularisation, data augmentation, invariance training, hyperparameters, evaluation) through arguments and configuration files.
+
 ## Citation
 
 If you use this code for scientific purposes, please consider citing:
