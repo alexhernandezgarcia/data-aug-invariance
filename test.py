@@ -31,7 +31,6 @@ from utils import pairwise_loss, invariance_loss, mean_loss
 from utils import handle_metrics
 from utils import prepare_test_config, numpy_to_python
 from utils import print_test_results, write_test_results
-from utils import IcaTransform
 import keras.losses
 keras.losses.pairwise_loss = pairwise_loss
 keras.losses.invariance_loss = invariance_loss
@@ -56,8 +55,7 @@ def main(argv=None):
     test_config = prepare_test_config(test_config, FLAGS)
 
     # Load model
-    model = load_model(os.path.join(FLAGS.model),
-                       custom_objects={'IcaTransform': IcaTransform})
+    model = load_model(os.path.join(FLAGS.model))
 
     # Open HDF5 file containing the data set and get images and labels
     hdf5_file = h5py.File(FLAGS.data_file, 'r')

@@ -8,7 +8,6 @@ from __future__ import print_function
 
 
 from image import ImageDataGeneratorExt
-from synthetic import SyntheticDataGenerator
 
 import numpy as np
 
