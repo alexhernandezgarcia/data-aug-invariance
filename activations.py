@@ -15,7 +15,7 @@ import h5py
 import pickle
 import dask.array as da
 import dask
-from dask.diagnostics import ProgressBar
+# from dask.diagnostics import ProgressBar
 # See: https://docs.dask.org/en/latest/diagnostics-local.html
 
 # Dask distributed
@@ -58,7 +58,7 @@ def get_activations(activation_function, batch_gen):
     # Delayed computation of the activations of a batch
     @dask.delayed
     def batch_activation():
-        batch_images, _ = batch_gen().next()
+        batch_images, _ = next(batch_gen())
         return activation_function([batch_images, 0])[0]
 
     # Delayed iteration over the data set

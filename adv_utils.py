@@ -79,13 +79,13 @@ def main(argv=None):
 
     # Load image parameters
     with open(FLAGS.image_params_file, 'r') as yml_file:
-        train_image_params = yaml.load(yml_file)
+        train_image_params = yaml.load(yml_file, Loader=yaml.FullLoader)
     image_params_dict = data_input.validation_image_params(
             **train_image_params)
 
     # Load attack parameters
     with open(FLAGS.attack_params_file, 'r') as yml_file:
-        attack_params_dict = yaml.load(yml_file)
+        attack_params_dict = yaml.load(yml_file, Loader=yaml.FullLoader)
 
     test_rep_orig(FLAGS.data_file, FLAGS.group, FLAGS.chunk_size,
                   FLAGS.batch_size, model, train_image_params, 
@@ -373,7 +373,7 @@ def _write_results(results, output_file):
     with open(output_file, 'w') as f:
         f.write('ADVERSARIAL EXAMPLES ROBUSTNESS:\n')
         with open(FLAGS.attack_params_file, 'r') as yml_file:
-            cfg = yaml.load(yml_file)
+            cfg = yaml.load(yml_file, Loader=yaml.FullLoader)
             for param in cfg:
                 f.write('\t%s: %s\n' % (param, cfg[param]))
         f.write('\tTest accuracy on adversarial examples: %.4f\n' % results)

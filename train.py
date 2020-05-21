@@ -65,7 +65,7 @@ def main(argv=None):
     # Read or/and prepare train config dictionary
     if FLAGS.train_config_file:
         with open(FLAGS.train_config_file, 'r') as f_yml:
-            train_config = yaml.load(f_yml)
+            train_config = yaml.load(f_yml, Loader=yaml.FullLoader)
     else:
         train_config = {}
     train_config = prepare_train_config(train_config, FLAGS)
@@ -99,7 +99,7 @@ def main(argv=None):
 
     # Data augmentation parameters
     with open(train_config.daug.daug_params_file, 'r') as f_yml:
-        daug_params_tr = yaml.load(f_yml)
+        daug_params_tr = yaml.load(f_yml, Loader=yaml.FullLoader)
         if (daug_params_tr['do_random_crop'] |
             daug_params_tr['do_central_crop']) & \
            (daug_params_tr['crop_size'] is not None):
@@ -122,10 +122,12 @@ def main(argv=None):
     if train_config.optimizer.invariance:
         with open(train_config.optimizer.daug_invariance_params_file, 
                   'r') as f_yml:
-            train_config.optimizer.daug_invariance_params = yaml.load(f_yml)
+            train_config.optimizer.daug_invariance_params = yaml.load(
+                    f_yml, Loader=yaml.FullLoader)
         with open(train_config.optimizer.class_invariance_params_file, 
                   'r') as f_yml:
-            train_config.optimizer.class_invariance_params = yaml.load(f_yml)
+            train_config.optimizer.class_invariance_params = yaml.load(
+                    f_yml, Loader=yaml.FullLoader)
 
     # Get monitored metrics
     metrics, metric_names = handle_metrics(train_config.metrics)
@@ -145,7 +147,7 @@ def main(argv=None):
     # Write training configuration to disk
     output_file = os.path.join(FLAGS.train_dir, 'train_config_' +
                                time.strftime('%a_%d_%b_%Y_%H%M%S') + '.yml')
-    with open(output_file, 'wb') as f:
+    with open(output_file, 'w') as f:
         yaml.dump(numpy_to_python(namespace2dict(train_config)), f, 
                   default_flow_style=False)
 
@@ -170,7 +172,7 @@ def main(argv=None):
     # Test
     if FLAGS.test_config_file:
         with open(FLAGS.test_config_file, 'r') as f_yml:
-            test_config = yaml.load(f_yml)
+            test_config = yaml.load(f_yml, Loader=yaml.FullLoader)
         test_config = prepare_test_config(test_config, FLAGS)
 
         test_results_dict = test(images_val, labels_val, images_tr, labels_tr,
@@ -252,7 +254,7 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
                     callback.on_batch_begin(batch_idx)
 
                 # Train
-                batch = batch_gen_tr.next()
+                batch = next(batch_gen_tr)
                 debug = False
 
                 # Log
@@ -328,7 +330,7 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
             metrics_val = np.zeros(len(metrics))
             for batch_idx in range(train_config.train.batches_per_epoch_val):
 
-                batch = batch_gen_val.next()
+                batch = next(batch_gen_val)
                 metrics_val_batch = model.test_on_batch(batch[0], batch[1])
 
                 for idx, metric in enumerate(metrics_val_batch):
@@ -345,7 +347,7 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
             progbar.add(1, values=metrics_progbar)
 
             # Tensorboard
-            metrics_names_tensorboard = progbar.sum_values.keys()
+            metrics_names_tensorboard = list(progbar.sum_values.keys())
             metrics_tensorboard = [metric[0] / float(metric[1]) for metric in 
                     progbar.sum_values.values()]
             for metric_name, metric in zip(
@@ -359,7 +361,8 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
                     metrics_tensorboard, no_mean=False, 
                     no_val_daug=train_config.daug.aug_per_img_val > 1,
                     metrics_cat=[])
-            metrics_tensorboard = map(list, zip(*metrics_tensorboard))
+            metrics_tensorboard = [list(item) for item in 
+                    zip(*metrics_tensorboard)]
             write_tensorboard(callbacks['tensorboard'], 
                               metrics_tensorboard[0], metrics_tensorboard[1], 
                               epoch)

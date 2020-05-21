@@ -65,7 +65,7 @@ def surgery():
 
     # Open training configuration file
     with open(FLAGS.train_config_file, 'r') as yml_file:
-        train_config = yaml.load(yml_file)
+        train_config = yaml.load(yml_file, Loader=yaml.FullLoader)
     batch_size = train_config['batch_size']
 
     # Open HDF5 file containing the data set and get images and labels
@@ -80,7 +80,7 @@ def surgery():
 
     # Image parameters
     with open(FLAGS.image_params_file, 'r') as yml_file:
-        train_image_params = yaml.load(yml_file)
+        train_image_params = yaml.load(yml_file, Loader=yaml.FullLoader)
         if train_image_params['do_random_crop'] & \
            (train_image_params['crop_size'] is not None):
             image_shape = train_image_params['crop_size']
@@ -88,7 +88,7 @@ def surgery():
 
     # Attack parameters
     with open(FLAGS.attack_params_file, 'r') as yml_file:
-        attack_params = yaml.load(yml_file)
+        attack_params = yaml.load(yml_file, Loader=yaml.FullLoader)
 
     # Load original model 
     model = load_model(os.path.join(FLAGS.model))
@@ -279,6 +279,12 @@ def restore_nodes(model, network_dict):
     nodes = [id(node) for node in model.inbound_nodes]
     common_nodes = set(nodes).intersection(
             set(network_dict['model']['inbound_nodes']))
+    old_nodes = set(nodes).difference(
+            set(network_dict['model']['inbound_nodes']))
+    if len(old_nodes) > 0:
+        for node in model.inbound_nodes:
+            if id(node) in old_nodes:
+                model.inbound_nodes.remove(node)
     if len(common_nodes) > 0:
         model.inbound_nodes = [node for node in model.inbound_nodes 
                 if id(node) in common_nodes]
@@ -287,6 +293,12 @@ def restore_nodes(model, network_dict):
     nodes = [id(node) for node in model.outbound_nodes]
     common_nodes = set(nodes).intersection(
             set(network_dict['model']['outbound_nodes']))
+    old_nodes = set(nodes).difference(
+            set(network_dict['model']['outbound_nodes']))
+    if len(old_nodes) > 0:
+        for node in model.outbound_nodes:
+            if id(node) in old_nodes:
+                model.outbound_nodes.remove(node)
     if len(common_nodes) > 0:
         model.outbound_nodes = [node for node in model.outbound_nodes 
                 if id(node) in common_nodes]
@@ -297,6 +309,12 @@ def restore_nodes(model, network_dict):
         nodes = [id(node) for node in layer.inbound_nodes]
         common_nodes = set(nodes).intersection(
                 set(network_dict[layer.name]['inbound_nodes']))
+        old_nodes = set(nodes).difference(
+                set(network_dict[layer.name]['inbound_nodes']))
+        if len(old_nodes) > 0:
+            for node in layer.inbound_nodes:
+                if id(node) in old_nodes:
+                    layer.inbound_nodes.remove(node)
         if len(nodes) == 0:
             pass
         elif len(common_nodes) > 0:
@@ -311,6 +329,12 @@ def restore_nodes(model, network_dict):
         nodes = [id(node) for node in layer.outbound_nodes]
         common_nodes = set(nodes).intersection(
                 set(network_dict[layer.name]['outbound_nodes']))
+        old_nodes = set(nodes).difference(
+                set(network_dict[layer.name]['outbound_nodes']))
+        if len(old_nodes) > 0:
+            for node in layer.outbound_nodes:
+                if id(node) in old_nodes:
+                    layer.outbound_nodes.remove(node)
         if len(nodes) == 0:
             pass
         elif len(common_nodes) > 0:
@@ -1017,9 +1041,9 @@ def _print_header(write_file=True):
     print('')
     print('Image pre-processing parameters:')
     with open(flags['image_params_file'], 'r') as yml_file:
-        daug_params = yaml.load(yml_file)
+        daug_params = yaml.load(yml_file, Loader=yaml.FullLoader)
     with open(flags['train_config_file'], 'r') as yml_file:
-        train_params = yaml.load(yml_file)
+        train_params = yaml.load(yml_file, Loader=yaml.FullLoader)
     for param in train_params:
         print('\t%s: %s' % (param, train_params[param]))
     print('')

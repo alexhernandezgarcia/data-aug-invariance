@@ -49,7 +49,7 @@ def main(argv=None):
     # Read or/and prepare test config dictionary
     if FLAGS.test_config_file:
         with open(FLAGS.test_config_file, 'r') as yml_file:
-            test_config = yaml.load(yml_file)
+            test_config = yaml.load(yml_file, Loader=yaml.FullLoader)
     else:
         test_config = {}
     test_config = prepare_test_config(test_config, FLAGS)
@@ -418,6 +418,7 @@ def test_ablation(images, labels, batch_size, model, daug_params, repetitions,
     results_dict = _stats_from_ablation_rep(results_dict)
 
     model = restore_nodes(model, network_dict)
+    del model_ablation
 
     return results_dict
 

@@ -52,7 +52,8 @@ class TrainingProgressLogger():
         # Create log dataset
         daug_params_file = get_daug_scheme_path(config.logger.daug, 
                                                 config.data.data_file)
-        daug_params = yaml.load(open(daug_params_file, 'r'))
+        daug_params = yaml.load(open(daug_params_file, 'r'),
+                                Loader=yaml.FullLoader)
         nodaug_params_file = get_daug_scheme_path(config.logger.daug, 
                                                 config.data.data_file)
         self.nodaug_params = validation_image_params(config.daug.nodaug, 
@@ -92,7 +93,7 @@ class TrainingProgressLogger():
         self.writer.writerow(headers)
 
     def log(self, metrics):
-        row = map(list, zip(*metrics))[1]
+        row = list(list(zip(*metrics))[1])
         for activations in self.activations:
             row.extend(activations)
         self.writer.writerow(row)
@@ -511,7 +512,7 @@ def prepare_test_config(test_config, flags):
             if 'daug_params' in k:
                 filename = os.path.join(root, dataset, v)
                 with open(filename, 'r') as yml_file:
-                    config_dict[k]= yaml.load(yml_file)
+                    config_dict[k]= yaml.load(yml_file, Loader=yaml.FullLoader)
             elif metrics is not None and k == 'metrics':
                 config_dict[k] = metrics
             elif isinstance(v, dict):
@@ -601,7 +602,7 @@ def prepare_test_config(test_config, flags):
         test_config['adv'].update({'attacks': {}})
         for attack_file in flags.adv_attacks:
             with open(attack_file, 'r') as yml_file:
-                attack = yaml.load(yml_file)
+                attack = yaml.load(yml_file, Loader=yaml.FullLoader)
                 test_config['adv']['attacks'].update({attack_file: attack})
 
         # Set percentage of data to compute adversarial robustness
@@ -714,7 +715,7 @@ def change_metrics_names(model, invariance):
 
 def sel_metrics(metrics_names, metrics, no_mean, no_val_daug=False, 
                 metrics_cat=[]):
-    metrics_progbar = zip(metrics_names, metrics)
+    metrics_progbar = list(zip(metrics_names, metrics))
     for metric_name, metric in zip(metrics_names, metrics):
         if no_mean and 'mean_' in metric_name:
             metrics_progbar.remove((metric_name, metric))
@@ -839,8 +840,10 @@ def _confirm(message):
     """
     answer = ""
     while answer not in ["y", "n"]:
-        answer = raw_input(message).lower()
-        # Python 3: raw_input() --> input()
+        try: # Python 2.x
+            answer = raw_input(message).lower()
+        except NameError: # Python 3.x
+            answer = input(message).lower()
     return answer == "y"
 
 

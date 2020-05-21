@@ -39,7 +39,7 @@ class batch_generator(object):
                 seed_shuffle=self.seed)
 
     def __call__(self):
-        batch = self.image_gen.next()
+        batch = next(self.image_gen)
         if self.n_inv_layers > 0:
             # The list of targets for the invariance outputs are:
             # [daug_invariance_target, class_invariance_target, mean: ones]
@@ -603,11 +603,11 @@ def create_control_dataset(images, labels, daug_params, nodaug_params,
                                                aug_per_im=1, 
                                                shuffle=False)
 
-            batch_images, batch_labels = batch_gen_nodaug().next()
+            batch_images, batch_labels = next(batch_gen_nodaug())
             dataset_images.append(da.from_array(batch_images))
             dataset_labels.append(da.from_array(batch_labels))
 
-            batch_images, batch_labels = batch_gen_daug().next()
+            batch_images, batch_labels = next(batch_gen_daug())
             dataset_images.append(da.from_array(batch_images))
             dataset_labels.append(da.from_array(batch_labels))
 

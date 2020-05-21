@@ -68,9 +68,11 @@ def main(argv=None):
 
     # Data augmentation parameters
     daug_params_file = get_daug_scheme_path(FLAGS.daug_params, FLAGS.data_file)
-    daug_params = yaml.load(open(daug_params_file, 'r'))
+    daug_params = yaml.load(open(daug_params_file, 'r'),
+                            Loader=yaml.FullLoader)
     nodaug_params_file = get_daug_scheme_path('nodaug.yml', FLAGS.data_file)
-    nodaug_params = yaml.load(open(nodaug_params_file, 'r'))
+    nodaug_params = yaml.load(open(nodaug_params_file, 'r'),
+                              Loader=yaml.FullLoader)
 
     # Initialize the network model
     model_filename = FLAGS.model

@@ -52,13 +52,13 @@ def truncnorm_cent_2std(min_val, max_val, size=None):
 
     if size:
         samples = np.zeros(size)
-	b = np.broadcast(loc, scale, min_val, max_val, samples)
+        b = np.broadcast(loc, scale, min_val, max_val, samples)
         idx = 0
-	for n_dim, (loc_v, scale_v, min_val_v, max_val_v, _) in enumerate(b):
+        for n_dim, (loc_v, scale_v, min_val_v, max_val_v, _) in enumerate(b):
             while True:
                 s = np.random.normal(loc=loc_v, scale=scale_v)
                 if (s >= min_val_v) & (s <= max_val_v):
-	            samples[np.unravel_index(idx, size)] = s
+                    samples[np.unravel_index(idx, size)] = s
                     idx += 1
                     break
         return samples
