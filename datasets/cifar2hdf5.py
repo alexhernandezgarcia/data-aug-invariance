@@ -39,7 +39,7 @@ def main(argv=None):
 
     images_train, labels_train, filenames_train, \
     images_val, labels_val, filenames_val = _split_train_val(
-            images_train, labels_train, filenames_train, FLAGS.pct_val) 
+            images_train, labels_train, filenames_train, FLAGS.pct_val)
 
     # Get number of examples in train and test sets
     num_train = images_train.shape[0]
@@ -65,8 +65,8 @@ def main(argv=None):
         max_n = int(num_train / N_CLASSES)
         min_n = int(max_n / FLAGS.imbalance_rho)
         n_minority = np.asarray(np.interp(x=np.arange(2, N_CLASSES),
-                                          xp=[1, N_CLASSES], 
-                                          fp=[min_n, max_n]), 
+                                          xp=[1, N_CLASSES],
+                                          fp=[min_n, max_n]),
                                 dtype=int)
         n_minority = np.r_[min_n, n_minority]
     elif FLAGS.class_imbalance == 'balanced':
@@ -84,7 +84,7 @@ def main(argv=None):
             labels_one_hot_tr = np.delete(labels_one_hot_tr, idx_del, axis=0)
             labels_train = np.delete(labels_train, idx_del, axis=0)
         num_train = images_train.shape[0]
-            
+
     # Open HDF5 file
     with h5py.File(FLAGS.output_file, 'w') as hdf5_file:
 
@@ -100,14 +100,14 @@ def main(argv=None):
             num_train, IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH), dtype=np.uint8)
         labels_tr_h5 = grp_tr.create_dataset('labels', shape=(
             num_train, N_CLASSES), dtype=np.uint8)
-        ids_tr = grp_tr.create_dataset('ids', shape=(num_train, 2), 
+        ids_tr = grp_tr.create_dataset('ids', shape=(num_train, 2),
                                        dtype=h5py.special_dtype(vlen=str))
 
         data_tt = grp_tt.create_dataset('data', shape=(
             num_test, IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH), dtype=np.uint8)
         labels_tt_h5 = grp_tt.create_dataset('labels', shape=(
             num_test, N_CLASSES), dtype=np.uint8)
-        ids_tt = grp_tt.create_dataset('ids', shape=(num_test, 2), 
+        ids_tt = grp_tt.create_dataset('ids', shape=(num_test, 2),
                                        dtype=h5py.special_dtype(vlen=str))
 
         if num_val > 0:
@@ -115,7 +115,7 @@ def main(argv=None):
                 num_val, IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH), dtype=np.uint8)
             labels_val_h5 = grp_val.create_dataset('labels', shape=(
                 num_val, N_CLASSES), dtype=np.uint8)
-            ids_val = grp_val.create_dataset('ids', 
+            ids_val = grp_val.create_dataset('ids',
                     shape=(num_val, 2), dtype=h5py.special_dtype(vlen=str))
 
         # Permute the indices in order to shuffle the images in the HDF5 file
@@ -131,7 +131,7 @@ def main(argv=None):
         # Fill data
         data_tr[:, :, :, :] = images_train[indices_tr, :, :, :]
         if FLAGS.shuffle_train_labels:
-            rand_indices_tr = np.random.permutation(indices_tr)      
+            rand_indices_tr = np.random.permutation(indices_tr)
             labels_tr_h5[:, :] = labels_one_hot_tr[rand_indices_tr, :]
             ids_tr[:, 0] = [str(filenames_train[i]) for i in rand_indices_tr]
             ids_tr[:, 1] = [classes[cl] for cl in labels_train]
@@ -172,8 +172,8 @@ def _download_cifar(download_dir):
 
     if not os.path.exists(filepath):
         def _progress(count, block_size, total_size):
-            sys.stdout.write('\r>> Downloading {} {:.f} %'.format(
-                filename, 
+            sys.stdout.write('\r>> Downloading {} {:.3f} %'.format(
+                filename,
                 float(count * block_size) / float(total_size) * 100.0))
             sys.stdout.flush()
         filepath, _ = urllib.request.urlretrieve(URL_DATA, filepath, _progress)
@@ -239,7 +239,7 @@ def _read_data(files, keyword):
     filenames = [f for filenames_batch in filenames for f in filenames_batch]
 
     # Reshape images
-    images = np.reshape(images, 
+    images = np.reshape(images,
                         [images.shape[0], IMG_DEPTH, IMG_HEIGHT, IMG_WIDTH])
     images = images.transpose(0, 2, 3, 1)
 
