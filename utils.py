@@ -563,7 +563,8 @@ def prepare_test_config(test_config, flags):
                                   'metrics': flags.metrics}})
 
     # Edit adversarial robustness configuration
-    if hasattr(flags, 'adv_pct_data') and flags.adv_pct_data < 1.:
+    if hasattr(flags, 'adv_pct_data') and flags.adv_pct_data and \
+            flags.adv_pct_data < 1.:
         adv_shuffle = True
         adv_shuffle_seed = flags.adv_shuffle_seed
     else:
@@ -947,7 +948,7 @@ def print_test_results(d):
         if 'test' in d['ablation']:
             sys.stdout.write('\nRobustness to ablation of units '
                              '(test data):\n')
-            for pct in np.sort(d['ablation']['test'].keys()):
+            for pct in sorted(d['ablation']['test'].keys()):
                 pct_dict = d['ablation']['test'][pct]
                 sys.stdout.write('\t{} % of the units:\n'.format(100 * pct))
                 for metric, metric_dict in pct_dict['metrics'].items():
@@ -964,7 +965,7 @@ def print_test_results(d):
         if 'train' in d['ablation']:
             sys.stdout.write('\nRobustness to ablation of units '
                              '(train data):\n')
-            for pct in np.sort(d['ablation']['train'].keys()):
+            for pct in sorted(d['ablation']['train'].keys()):
                 pct_dict = d['ablation']['train'][pct]
                 sys.stdout.write('\t{} % of the units:\n'.format(100 * pct))
                 for metric, metric_dict in pct_dict['metrics'].items():
@@ -1026,7 +1027,7 @@ def print_test_results(d):
     sys.stdout.flush()
 
 
-def write_test_results(d, output_file, write_mode='wb'):
+def write_test_results(d, output_file, write_mode='w'):
     f =  open(output_file, write_mode)
 
     if 'test' in d:
@@ -1088,7 +1089,7 @@ def write_test_results(d, output_file, write_mode='wb'):
     if 'ablation' in d:
         if 'test' in d['ablation']:
             f.write('\nRobustness to ablation of units (test data):\n')
-            for pct in np.sort(d['ablation']['test'].keys()):
+            for pct in sorted(d['ablation']['test'].keys()):
                 pct_dict = d['ablation']['test'][pct]
                 f.write('\t{} % of the units:\n'.format(100 * pct))
                 for metric, metric_dict in pct_dict['metrics'].items():
@@ -1104,7 +1105,7 @@ def write_test_results(d, output_file, write_mode='wb'):
 
         if 'train' in d['ablation']:
             f.write('\nRobustness to ablation of units (train data):\n')
-            for pct in np.sort(d['ablation']['train'].keys()):
+            for pct in sorted(d['ablation']['train'].keys()):
                 pct_dict = d['ablation']['train'][pct]
                 f.write('\t{} % of the units:\n'.format(100 * pct))
                 for metric, metric_dict in pct_dict['metrics'].items():

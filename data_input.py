@@ -7,7 +7,7 @@ from __future__ import division
 from __future__ import print_function
 
 
-from image import ImageDataGeneratorExt
+from image_data_generator import ImageDataGeneratorExt
 
 import numpy as np
 
@@ -33,10 +33,19 @@ class batch_generator(object):
         self.n_inv_layers = n_inv_layers
         self.n_images = images.shape[0]
         self.n_batches = int(np.ceil(self.n_images / float(self.batch_size)))
-        self.image_gen = image_gen.flow(
-                self.images, self.labels, batch_size=self.batch_size,
-                aug_per_im=self.aug_per_im, shuffle=self.shuffle,
-                seed_shuffle=self.seed)
+        if isinstance(images, np.ndarray):
+            self.image_gen = image_gen.flow(
+                    self.images, self.labels, batch_size=self.batch_size,
+                    aug_per_im=self.aug_per_im, shuffle=self.shuffle,
+                    seed_shuffle=self.seed)
+        elif isinstance(images, da.core.Array):
+            self.image_gen = image_gen.flow_dask(
+                    self.images, self.labels, batch_size=self.batch_size,
+                    aug_per_im=self.aug_per_im, shuffle=self.shuffle,
+                    seed_shuffle=self.seed)
+        else:
+            raise NotImplementedError('The input data must be a Numpy or a '
+                                      'Dask array')
 
     def __call__(self):
         batch = next(self.image_gen)
@@ -97,13 +106,13 @@ def get_generator(images, **dict_params):
     return image_gen
 
 
-def generate_batches(image_gen, images, labels, batch_size, aug_per_im,
-                      shuffle, seed=None, n_inv_layers=0):
-    for batch in image_gen.flow(images, labels,
-                                batch_size=batch_size,
-                                aug_per_im=aug_per_im,
-                                shuffle=shuffle,
-                                seed_shuffle=seed):
+def generate_batches(image_gen, images, labels, batch_size, aug_per_im, shuffle, 
+                     seed=None, n_inv_layers=0):
+    for batch in image_gen.flow_dask(images, labels,
+                                     batch_size=batch_size,
+                                     aug_per_im=aug_per_im,
+                                     shuffle=shuffle,
+                                     seed_shuffle=seed):
         if n_inv_layers > 0:
             # The list of targets for the invariance outputs are:
             # [daug_invariance_target, class_invariance_target, mean: ones]
@@ -217,134 +226,6 @@ def train_val_split(hdf5_file, group_train, group_test, chunk_size,
             hdf5_files.append(hdf5_aux)
 
     return da_images_tr, da_images_val, da_labels_tr, da_labels_val, hdf5_files
-
-
-def train_val_split_seq(hdf5_file, group_train, group_test, pct_train, pct_val, 
-                        label, float, n_folds=None, fold=0, shuffle=True,
-                        seed=None, normalize=True):
-    """
-    Creates the train/validation split, either by spliting the training set or
-    from a specified test set.
-
-    Parameters
-    ----------
-    hdf5_file : h5py Object
-        h5py Object containing the data set
-
-    group_train : str
-        Name of the group containing the training set
-
-    group_test : str
-        Name of the group containing the test (validation) set. It can be None
-
-    pct_train : float
-        It allows training with a reduced set of the available training data
-
-    pct_val : float
-        Percentage of training examples used for validation. Only relevant if
-        group_test is None.
-
-    label : str
-        Data to use as labels. It must be either 'condition' or 'on_scotoma'
-
-    shuffle : bool
-        Whether to shuffle before the train/validation split. Only relevant if
-        group_test is None.
-        
-    seed : int
-        Seed for the shuffle.
-
-    Yields
-    -------
-    Tuple
-        A tuple whose elements are a batch of sequences and labels
-    """
-
-    if seed is not None:
-        np.random.seed(seed)
-
-    if group_test:
-
-        # Read data from HDF5 file
-        data_tr = hdf5_file[group_train]
-        data_val = hdf5_file[group_test]
-        seq_tr = np.asarray(data_tr['seq'], dtype=float)
-        seq_val = np.asarray(data_val['seq'], dtype=float)
-        cat_tr = np.asarray(data_tr['cat'], dtype=float)
-        cat_val = np.asarray(data_val['cat'], dtype=float)
-        subj_tr = np.asarray(data_tr['subj'])
-        subj_val = np.asarray(data_val['subj'])
-        if label == 'joint':
-            labels_tr = [np.asarray(data_tr['condition']), 
-                         np.asarray(data_tr['on_scotoma'])]
-            labels_val = [np.asarray(data_val['condition']), 
-                          np.asarray(data_val['on_scotoma'])]
-        else:
-            labels_tr = np.asarray(data_tr[label])
-            labels_val = np.asarray(data_val[label])
-
-    else:
-
-        data = hdf5_file[group_train]
-        seq = np.asarray(data['seq'], dtype=float)
-        cat = np.asarray(data['cat'], dtype=float)
-        if label == 'joint':
-            labels = [np.asarray(data['condition']), 
-                      np.asarray(data['on_scotoma'])]
-        else:
-            labels = np.asarray(data[label])
-        subj_idx = np.asarray(data['subj'])
-
-        subjects = np.unique(subj_idx)
-        n_subjects = subjects.shape[0]
-        if shuffle and n_folds is None:
-            subjects = np.random.permutation(subjects)
-
-        if n_folds and (fold >= 0 and fold < n_folds):
-            pct_val = 1. / n_folds
-            n_subjects_val = int(pct_val * n_subjects)
-            init_val = fold * n_subjects_val
-            end_val = init_val + n_subjects_val
-            subjects_val = subjects[init_val:end_val]
-            subjects_train = np.asarray(list(
-                set(subjects).difference(subjects_val)))
-        else:
-            subjects_val = subjects[:int(pct_val * n_subjects)]
-            subjects_train = subjects[int(pct_val * n_subjects):]
-
-        idx_tr = np.argwhere(np.isin(subj_idx, subjects_train))[:, 0]
-        idx_val = np.argwhere(np.isin(subj_idx, subjects_val))[:, 0]
-
-        seq_tr = seq[idx_tr]
-        cat_tr = cat[idx_tr]
-        subj_tr = subj_idx[idx_tr]
-        seq_val = seq[idx_val]
-        cat_val = cat[idx_val]
-        subj_val = subj_idx[idx_val]
-        if label == 'joint':
-            labels_tr = [labels[0][idx_tr], labels[1][idx_tr]]
-            labels_val = [labels[0][idx_val], labels[1][idx_val]]
-        else:
-            labels_tr = labels[idx_tr]
-            labels_val = labels[idx_val]
-
-    if normalize:
-        mean = np.mean(seq_tr, axis=(0, 1))
-        std = np.std(seq_tr, axis=(0, 1))
-        seq_tr -= mean
-        seq_val -= mean
-        seq_tr /= std
-        seq_val /= std
-
-        mean = np.mean(cat_tr, axis=0)
-        std = np.std(cat_tr, axis=0)
-        cat_tr -= mean
-        cat_val -= mean
-        cat_tr /= std
-        cat_val /= std
-
-    return (seq_tr, cat_tr, subj_tr, labels_tr), (seq_val, cat_val, subj_val,
-            labels_val)
 
 
 def dataset_characteristics(hdf5_file, group_name, labels_id='labels'):
@@ -651,7 +532,7 @@ def validation_image_params(base_config_file=
         The validation parameters dictionary
     """
     with open(base_config_file, 'r') as yml_file:
-        val_config = yaml.load(yml_file)
+        val_config = yaml.load(yml_file, Loader=yaml.FullLoader)
 
     # Standardization parameters
     val_config['featurewise_center'] = params_dict['featurewise_center']

@@ -22,7 +22,7 @@ from dask.diagnostics import ProgressBar
 # Dask distributed
 # See: https://docs.dask.org/en/latest/scheduling.html
 # See: https://docs.dask.org/en/latest/setup/single-distributed.html
-from dask.distributed import Client, LocalCluster
+# from dask.distributed import Client, LocalCluster
 
 from data_input import hdf52dask, get_generator, batch_generator
 from utils import get_daug_scheme_path

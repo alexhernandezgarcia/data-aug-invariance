@@ -380,7 +380,7 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
                 validation_steps=train_config.train.batches_per_epoch_val,
                 initial_epoch=train_config.train.initial_epoch,
                 max_queue_size=train_config.data.queue_size,
-                callbacks=callbacks.values())
+                callbacks=list(callbacks.values()))
 
     if loggers:
         for logger in loggers:

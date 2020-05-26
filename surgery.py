@@ -194,32 +194,32 @@ def del_extra_nodes(model, log_file=None, verbose=0):
     model : Keras Model
         The modified model
     """
-    if model.inbound_nodes:
-        if len(model.inbound_nodes) > 1:
-            model.inbound_nodes = [model.inbound_nodes[0]]
+    if model._inbound_nodes:
+        if len(model._inbound_nodes) > 1:
+            model._inbound_nodes = [model._inbound_nodes[0]]
             if verbose > 0:
                 print('\nRemoved inbound nodes at model input')
             if log_file:
                 log_file.write('\nRemoved inbound nodes at model input')
-    if model.outbound_nodes:
-        if len(model.outbound_nodes) > 1:
-            model.outbound_nodes = [model.outbound_nodes[0]]
+    if model._outbound_nodes:
+        if len(model._outbound_nodes) > 1:
+            model._outbound_nodes = [model._outbound_nodes[0]]
             if verbose > 0:
                 print('\nRemoved outbound nodes at model output')
             if log_file:
                 log_file.write('\nRemoved outbound nodes at model output')
     for layer in model.layers:
-        if layer.inbound_nodes:
-            if len(layer.inbound_nodes) > 1:
-                layer.inbound_nodes = [layer.inbound_nodes[0]]
+        if layer._inbound_nodes:
+            if len(layer._inbound_nodes) > 1:
+                layer._inbound_nodes = [layer._inbound_nodes[0]]
                 if verbose > 0:
                     print('\nRemoved inbound nodes at layer %s' % layer.name)
             if log_file:
                     log_file.write('\nRemoved inbound nodes at layer '
                                    '%s' % layer.name)
-        if layer.outbound_nodes:
-            if len(layer.outbound_nodes) > 1:
-                layer.outbound_nodes = [layer.outbound_nodes[0]]
+        if layer._outbound_nodes:
+            if len(layer._outbound_nodes) > 1:
+                layer._outbound_nodes = [layer._outbound_nodes[0]]
                 if verbose > 0:
                     print('\nRemoved outbound nodes at layer %s' % layer.name)
             if log_file:
@@ -246,13 +246,13 @@ def network2dict(model):
     """
 
     network_dict = {'model': 
-            {'inbound_nodes': [id(node) for node in model.inbound_nodes],
-             'outbound_nodes': [id(node) for node in model.outbound_nodes]}}
+            {'inbound_nodes': [id(node) for node in model._inbound_nodes],
+             'outbound_nodes': [id(node) for node in model._outbound_nodes]}}
 
     for layer in model.layers:
         network_dict.update({layer.name: 
-	    {'inbound_nodes': [id(node) for node in layer.inbound_nodes],
-            'outbound_nodes': [id(node) for node in layer.outbound_nodes]}})
+	    {'inbound_nodes': [id(node) for node in layer._inbound_nodes],
+            'outbound_nodes': [id(node) for node in layer._outbound_nodes]}})
 
     return network_dict
 
@@ -276,49 +276,49 @@ def restore_nodes(model, network_dict):
         The model with restored nodes
     """
     # Model inbound nodes
-    nodes = [id(node) for node in model.inbound_nodes]
+    nodes = [id(node) for node in model._inbound_nodes]
     common_nodes = set(nodes).intersection(
             set(network_dict['model']['inbound_nodes']))
     old_nodes = set(nodes).difference(
             set(network_dict['model']['inbound_nodes']))
     if len(old_nodes) > 0:
-        for node in model.inbound_nodes:
+        for node in model._inbound_nodes:
             if id(node) in old_nodes:
-                model.inbound_nodes.remove(node)
+                model._inbound_nodes.remove(node)
     if len(common_nodes) > 0:
-        model.inbound_nodes = [node for node in model.inbound_nodes 
+        model._inbound_nodes = [node for node in model._inbound_nodes 
                 if id(node) in common_nodes]
         
     # Model outbound nodes
-    nodes = [id(node) for node in model.outbound_nodes]
+    nodes = [id(node) for node in model._outbound_nodes]
     common_nodes = set(nodes).intersection(
             set(network_dict['model']['outbound_nodes']))
     old_nodes = set(nodes).difference(
             set(network_dict['model']['outbound_nodes']))
     if len(old_nodes) > 0:
-        for node in model.outbound_nodes:
+        for node in model._outbound_nodes:
             if id(node) in old_nodes:
-                model.outbound_nodes.remove(node)
+                model._outbound_nodes.remove(node)
     if len(common_nodes) > 0:
-        model.outbound_nodes = [node for node in model.outbound_nodes 
+        model._outbound_nodes = [node for node in model._outbound_nodes 
                 if id(node) in common_nodes]
         
     # Iterate over the layers
     for layer in model.layers:
         # Inbound nodes
-        nodes = [id(node) for node in layer.inbound_nodes]
+        nodes = [id(node) for node in layer._inbound_nodes]
         common_nodes = set(nodes).intersection(
                 set(network_dict[layer.name]['inbound_nodes']))
         old_nodes = set(nodes).difference(
                 set(network_dict[layer.name]['inbound_nodes']))
         if len(old_nodes) > 0:
-            for node in layer.inbound_nodes:
+            for node in layer._inbound_nodes:
                 if id(node) in old_nodes:
-                    layer.inbound_nodes.remove(node)
+                    layer._inbound_nodes.remove(node)
         if len(nodes) == 0:
             pass
         elif len(common_nodes) > 0:
-            layer.inbound_nodes = [node for node in layer.inbound_nodes 
+            layer._inbound_nodes = [node for node in layer._inbound_nodes 
                     if id(node) in common_nodes]
         else:
             raise ValueError('No common inbound nodes between the dictionary '
@@ -326,19 +326,19 @@ def restore_nodes(model, network_dict):
                                  layer.name))
 
         # Outbound nodes
-        nodes = [id(node) for node in layer.outbound_nodes]
+        nodes = [id(node) for node in layer._outbound_nodes]
         common_nodes = set(nodes).intersection(
                 set(network_dict[layer.name]['outbound_nodes']))
         old_nodes = set(nodes).difference(
                 set(network_dict[layer.name]['outbound_nodes']))
         if len(old_nodes) > 0:
-            for node in layer.outbound_nodes:
+            for node in layer._outbound_nodes:
                 if id(node) in old_nodes:
-                    layer.outbound_nodes.remove(node)
+                    layer._outbound_nodes.remove(node)
         if len(nodes) == 0:
             pass
         elif len(common_nodes) > 0:
-            layer.outbound_nodes = [node for node in layer.outbound_nodes 
+            layer._outbound_nodes = [node for node in layer._outbound_nodes 
                     if id(node) in common_nodes]
         else:
             raise ValueError('No common outbound nodes between the dictionary '
@@ -367,38 +367,38 @@ def del_old_nodes(model, network_dict):
         The model with updated nodes
     """
     # Model inbound nodes
-    nodes = [id(node) for node in model.inbound_nodes]
+    nodes = [id(node) for node in model._inbound_nodes]
     diff_nodes = set(nodes).difference(
             set(network_dict['model']['inbound_nodes']))
     if len(diff_nodes) > 0:
-        model.inbound_nodes = [node for node in model.inbound_nodes 
+        model._inbound_nodes = [node for node in model._inbound_nodes 
                 if id(node) in diff_nodes]
         
     # Model outbound nodes
-    nodes = [id(node) for node in model.outbound_nodes]
+    nodes = [id(node) for node in model._outbound_nodes]
     diff_nodes = set(nodes).difference(
             set(network_dict['model']['outbound_nodes']))
     if len(diff_nodes) > 0:
-        model.outbound_nodes = [node for node in model.outbound_nodes 
+        model._outbound_nodes = [node for node in model._outbound_nodes 
                 if id(node) in diff_nodes]
         
     # Iterate over the layers
     for layer in model.layers:
         if layer.name in network_dict:
             # Inbound nodes
-            nodes = [id(node) for node in layer.inbound_nodes]
+            nodes = [id(node) for node in layer._inbound_nodes]
             diff_nodes = set(nodes).difference(
                     set(network_dict[layer.name]['inbound_nodes']))
             if len(diff_nodes) > 0:
-                layer.inbound_nodes = [node for node in layer.inbound_nodes 
+                layer._inbound_nodes = [node for node in layer._inbound_nodes 
                         if id(node) in diff_nodes]
 
             # Outbound nodes
-            nodes = [id(node) for node in layer.outbound_nodes]
+            nodes = [id(node) for node in layer._outbound_nodes]
             diff_nodes = set(nodes).difference(
                     set(network_dict[layer.name]['outbound_nodes']))
             if len(diff_nodes) > 0:
-                layer.outbound_nodes = [node for node in layer.outbound_nodes 
+                layer._outbound_nodes = [node for node in layer._outbound_nodes 
                         if id(node) in diff_nodes]
 
     _update_keras_history(model)
@@ -418,12 +418,12 @@ def _update_keras_history(model):
                 tensor._keras_history = (tensor._keras_history[0], idx_node,
                                          idx_tensor)
 
-    _update_node_history(model.inbound_nodes)
-    _update_node_history(model.outbound_nodes)
+    _update_node_history(model._inbound_nodes)
+    _update_node_history(model._outbound_nodes)
 
     for layer in model.layers:
-        _update_node_history(layer.inbound_nodes)
-        _update_node_history(layer.outbound_nodes)
+        _update_node_history(layer._inbound_nodes)
+        _update_node_history(layer._outbound_nodes)
         
 
 def del_mse_nodes(model, log_file=None, verbose=1):
@@ -446,20 +446,20 @@ def del_mse_nodes(model, log_file=None, verbose=1):
     """
     def del_nonrelevant_nodes(model):
         relevant_nodes = []
-        for node in model.nodes_by_depth.values():
+        for node in model._nodes_by_depth.values():
             relevant_nodes.extend(node)
 
         for layer in model.layers:
-            if layer.inbound_nodes:
-                inbound_nodes = layer.inbound_nodes
+            if layer._inbound_nodes:
+                inbound_nodes = layer._inbound_nodes
                 for node in inbound_nodes:
                     if node not in relevant_nodes:
                         inbound_nodes.remove(node)
                         if verbose > 0:
                             print('Removed (mse) node {} from layer {}'.format(
                                 node, layer.name))
-            if layer.outbound_nodes:
-                outbound_nodes = layer.outbound_nodes
+            if layer._outbound_nodes:
+                outbound_nodes = layer._outbound_nodes
                 for node in outbound_nodes:
                     if node not in relevant_nodes:
                         outbound_nodes.remove(node)
@@ -468,8 +468,8 @@ def del_mse_nodes(model, log_file=None, verbose=1):
                                 node, layer.name))
 
     def del_extra_nodes(layer, softmax):
-        if layer.outbound_nodes:
-            outbound_nodes = layer.outbound_nodes
+        if layer._outbound_nodes:
+            outbound_nodes = layer._outbound_nodes
             for outnode in outbound_nodes:
                 if outnode.outbound_layer:
                     if not connected_to_softmax(
@@ -487,8 +487,8 @@ def del_mse_nodes(model, log_file=None, verbose=1):
                                 innode, layer.name))
                 else:
                     pass
-        if layer.inbound_nodes:
-            inbound_nodes = layer.inbound_nodes
+        if layer._inbound_nodes:
+            inbound_nodes = layer._inbound_nodes
             for innode in inbound_nodes:
                 if innode.inbound_layers:
                     for in_layer in innode.inbound_layers:
@@ -501,8 +501,8 @@ def del_mse_nodes(model, log_file=None, verbose=1):
         if layer is softmax:
             return True
         else:
-            if layer.outbound_nodes:
-                outbound_nodes = layer.outbound_nodes
+            if layer._outbound_nodes:
+                outbound_nodes = layer._outbound_nodes
                 for outnode in outbound_nodes:
                     if outnode.outbound_layer:
                         return connected_to_softmax(outnode.outbound_layer, 
@@ -519,8 +519,8 @@ def del_mse_nodes(model, log_file=None, verbose=1):
         if layer is input:
             return True
         else:
-            if layer.inbound_nodes:
-                inbound_nodes = layer.inbound_nodes
+            if layer._inbound_nodes:
+                inbound_nodes = layer._inbound_nodes
                 for innode in inbound_nodes:
                     if innode.inbound_layers:
                         for in_layer in innode.inbound_layers:
@@ -625,7 +625,7 @@ def insert_layer(model, layer_regex, insert_layer_factory,
 
     # Set the input layers of each layer
     for layer in model.layers:
-        for node in layer.outbound_nodes:
+        for node in layer._outbound_nodes:
             layer_name = node.outbound_layer.name
             if layer_name not in network_dict['input_layers_of']:
                 network_dict['input_layers_of'].update(
@@ -697,7 +697,7 @@ def network2dict_old(model):
     network_dict = {'input_layers_of': {}, 'output_tensor_of': {}}
 
     for idx, layer in enumerate(model.layers):
-        for node in layer.outbound_nodes:
+        for node in layer._outbound_nodes:
             layer_name = node.outbound_layer.name
             if layer_name not in network_dict['input_layers_of']:
                 network_dict['input_layers_of'].update(
@@ -744,8 +744,8 @@ def insert_layer_old(model, key_layer_name):
     x = key_layer.output
 
     # Determine next layer after the key layer
-    next_layer = key_layer.outbound_nodes[0].outbound_layer
-    key_layer.outbound_nodes = []
+    next_layer = key_layer._outbound_nodes[0].outbound_layer
+    key_layer._outbound_nodes = []
 
     # Attach the new layers
     n_bn = 1
@@ -764,14 +764,14 @@ def insert_layer_old(model, key_layer_name):
 #             x = add([x, x], name='add{}'.format(n+1))
 
     # Connect the new layers to the original 'next_layer'
-    next_layer.inbound_nodes = []
+    next_layer._inbound_nodes = []
     x = next_layer(x)
     
     # Re-connect the rest of the layers
     while next_layer is not output_layer:
-        next_layer = next_layer.outbound_nodes[0].outbound_layer
-        next_layer.inbound_nodes[0].inbound_layers[0].outbound_nodes = []
-        next_layer.inbound_nodes = []
+        next_layer = next_layer._outbound_nodes[0].outbound_layer
+        next_layer._inbound_nodes[0].inbound_layers[0]._outbound_nodes = []
+        next_layer._inbound_nodes = []
         x = next_layer(x)
         
     new_model = Model(inputs=model.input, outputs=x)
@@ -814,22 +814,22 @@ def insert_bn(model, bn_layer_str, n_bn):
     beta = w_bn[1]
 
     # Determine next layer after the key BN layer
-    next_layer = bn_layer.outbound_nodes[0].outbound_layer
-    bn_layer.outbound_nodes = []
+    next_layer = bn_layer._outbound_nodes[0].outbound_layer
+    bn_layer._outbound_nodes = []
 
     # Attach the new BatchNorm layers
     for n in range(n_bn):
         x = BatchNormalization(name= '{}_new{}'.format(bn_layer_str, n+1))(x)
 
     # Connect the new layers to the original 'next_layer'
-    next_layer.inbound_nodes = []
+    next_layer._inbound_nodes = []
     x = next_layer(x)
     
     # Re-connect the rest of the layers
     while next_layer is not output_layer:
-        next_layer = next_layer.outbound_nodes[0].outbound_layer
-        next_layer.inbound_nodes[0].inbound_layers[0].outbound_nodes = []
-        next_layer.inbound_nodes = []
+        next_layer = next_layer._outbound_nodes[0].outbound_layer
+        next_layer._inbound_nodes[0].inbound_layers[0]._outbound_nodes = []
+        next_layer._inbound_nodes = []
         x = next_layer(x)
         
     new_model = Model(inputs=model.input, outputs=x)
@@ -860,7 +860,7 @@ def ablate_activations(model, layer_regex, pct_ablation, seed):
 
     # Set the input layers of each layer
     for layer in model.layers:
-        for node in layer.outbound_nodes:
+        for node in layer._outbound_nodes:
             layer_name = node.outbound_layer.name
             if layer_name not in network_dict['input_layers_of']:
                 network_dict['input_layers_of'].update(

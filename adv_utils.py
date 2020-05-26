@@ -24,8 +24,12 @@ keras.losses.custom_mse = pairwise_loss
 from surgery import del_mse_nodes, ensure_softmax_output
 
 from cleverhans.utils_tf import model_eval
-from cleverhans.attacks import FastGradientMethod, DeepFool, MadryEtAl
+from cleverhans.attacks import FastGradientMethod, DeepFool
 from cleverhans.attacks import CarliniWagnerL2, SPSA
+try:
+    from cleverhans.attacks import ProjectedGradientDescent
+except:
+    from cleverhans.attacks import MadryEtAl as ProjectedGradientDescent
 from cleverhans.utils_keras import KerasModelWrapper
 
 # Initialize the Flags container
@@ -159,7 +163,8 @@ def test(images, labels, batch_size, model, model_adv, image_params_dict,
 
     # Create batch generator
     image_gen = data_input.get_generator(images, **image_params_dict)
-    batch_gen = image_gen.flow(images, labels, batch_size, shuffle=False)
+    batch_gen = batch_generator(image_gen, images, labels, batch_size, 
+                                aug_per_im=1, shuffle=False)
     n_batches_per_epoch = int(np.ceil(float(images.shape[0]) / batch_size))
 
     # Define input TF placeholder
@@ -193,7 +198,7 @@ def test(images, labels, batch_size, model, model_adv, image_params_dict,
     with sess.as_default():
         init = 0
         for _ in tqdm(range(n_batches_per_epoch)):
-            batch = batch_gen.next()
+            batch = next(batch_gen())
             this_batch_size = batch[0].shape[0]
 
             # Evaluate accuracy
@@ -286,7 +291,7 @@ def init_attack(model, attack_params_dict, sess):
         attack = DeepFool(model_wrap, sess=sess)
         attack_params = {'clip_min': 0., 'clip_max': 1.}
     elif attack_params_dict['attack'] == 'pgd':
-        attack = MadryEtAl(model_wrap, sess=sess)
+        attack = ProjectedGradientDescent(model_wrap, sess=sess)
         attack_params = {'eps': attack_params_dict['eps'], 
                          'eps_iter': attack_params_dict['eps_iter'],
                          'nb_iter': attack_params_dict['n_steps'],
@@ -322,7 +327,7 @@ def eval_cleverhans():
         attack = DeepFool(model_wrap, sess=K.get_session())
         attack_params = {'clip_min': 0., 'clip_max': 1.}
     elif attack_params_dict['attack'] == 'madry':
-        attack = MadryEtAl(model_wrap, sess=K.get_session())
+        attack = ProjectedGradientDescent(model_wrap, sess=K.get_session())
         attack_params = {'clip_min': 0., 'clip_max': 1.}
     elif attack_params_dict['attack'] == 'carlini':
         attack = CarliniWagnerL2(model_wrap, sess=K.get_session())

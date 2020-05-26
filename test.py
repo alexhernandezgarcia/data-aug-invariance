@@ -20,7 +20,8 @@ from tqdm import tqdm
 import re
 from time import time
 
-from data_input import train_val_split, get_generator, subsample_data
+from data_input import train_val_split, subsample_data
+from data_input import get_generator, batch_generator
 from data_input import generate_batches
 from adv_utils import init_attack
 from surgery import ablate_activations, del_mse_nodes, del_extra_nodes
@@ -73,9 +74,9 @@ def main(argv=None):
             FLAGS.output_dir = os.path.dirname(FLAGS.model)
 
         if FLAGS.append:
-            write_mode = 'ab'
+            write_mode = 'a'
         else:
-            write_mode = 'wb'
+            write_mode = 'w'
 
         if not os.path.exists(FLAGS.output_dir):
             os.makedirs(FLAGS.output_dir)
@@ -234,54 +235,69 @@ def test(images_tt, labels_tt, images_tr, labels_tr, model, test_config,
         # White box attack
         results_dict['adv'].update({'white_box': {}})
         adv_model = model
-        for attack in test_config['adv']['attacks']:
+        for attack, attack_dict in test_config['adv']['attacks'].items():
             print('\nComputing white box adversarial robustness '
                   'towards {}'.format(attack))
             results_dict['adv']['white_box'].update({attack: {}})
-            if 'eps' in test_config['adv']['attacks'][attack] and \
-               isinstance(test_config['adv']['attacks'][attack]['eps'], list):
-                epsilons = test_config['adv']['attacks'][attack]['eps']
-                for eps in epsilons:
-                    results_dict['adv']['white_box'][attack].update({eps: {}})
-                    test_config['adv']['attacks'][attack]['eps'] = eps
-                    results_dict['adv']['white_box'][attack][eps] = test_adv(
+            results_dict_attack = results_dict['adv']['white_box'][attack]
+            if 'eps' in attack_dict and \
+               isinstance(attack_dict['eps'], list):
+                epsilons = attack_dict['eps']
+                if 'eps_iter' in attack_dict:
+                    epsilons_iter = attack_dict['eps_iter']
+                else:
+                    epsilons_iter = [None] * len(epsilons)
+                for eps, eps_iter in zip(epsilons, epsilons_iter):
+                    results_dict_attack.update({eps: {}})
+                    attack_dict['eps'] = eps
+                    if eps_iter:
+                        attack_dict['eps_iter'] = eps_iter
+                    results_dict_attack[eps] = test_adv(
                             images_adv, labels_adv, batch_size, model,
                             adv_model, test_config['adv']['daug_params'],
-                            test_config['adv']['attacks'][attack])
-                test_config['adv']['attacks'][attack]['eps'] = epsilons
+                            attack_dict)
+                attack_dict['eps'] = epsilons
+                if 'eps_iter' in attack_dict:
+                    attack_dict['eps_iter'] = epsilons_iter
             else:
-                results_dict['adv']['white_box'][attack] = test_adv(
+                results_dict_attack = test_adv(
                         images_adv, labels_adv, batch_size, model, adv_model,
                         test_config['adv']['daug_params'], 
-                        test_config['adv']['attacks'][attack])
+                        attack_dict)
 
         # Black box attack
         if test_config['adv']['black_box_model']:
             adv_model = load_model(test_config['adv']['black_box_model'])
             results_dict['adv'].update({'black_box': {}})
-            for attack in test_config['adv']['attacks']:
+            for attack, attack_dict in test_config['adv']['attacks'].items():
                 print('\nComputing black box adversarial robustness '
                       'towards {}'.format(attack))
                 results_dict['adv']['black_box'].update({attack: {}})
-                if 'eps' in test_config['adv']['attacks'][attack] and \
-                   isinstance(test_config['adv']['attacks'][attack]['eps'], 
-                              list):
-                    epsilons = test_config['adv']['attacks'][attack]['eps']
-                    for eps in epsilons:
-                        results_dict['adv']['black_box'][attack].update(
-                                {eps: {}})
-                        test_config['adv']['attacks'][attack]['eps'] = eps
-                        results_dict['adv']['black_box'][attack][eps] = \
-                                test_adv(images_adv, labels_adv, batch_size, 
-                                         model, adv_model, 
-                                         test_config['adv']['daug_params'],
-                                         test_config['adv']['attacks'][attack])
-                    test_config['adv']['attacks'][attack]['eps'] = epsilons
+                results_dict_attack = results_dict['adv']['black_box'][attack]
+                if 'eps' in attack_dict and \
+                   isinstance(attack_dict['eps'], list):
+                    epsilons = attack_dict['eps']
+                    if 'eps_iter' in attack_dict:
+                        epsilons_iter = attack_dict['eps_iter']
+                    else:
+                        epsilons_iter = [None] * len(epsilons)
+                    for eps, eps_iter in zip(epsilons, epsilons_iter):
+                        results_dict_attack.update({eps: {}})
+                        attack_dict['eps'] = eps
+                        if eps_iter:
+                            attack_dict['eps_iter'] = eps_iter
+                        results_dict_attack[eps] = test_adv(
+                                images_adv, labels_adv, batch_size, model,
+                                adv_model, test_config['adv']['daug_params'],
+                                attack_dict)
+                    attack_dict['eps'] = epsilons
+                    if 'eps_iter' in attack_dict:
+                        attack_dict['eps_iter'] = epsilons_iter
                 else:
-                    results_dict['adv']['black_box'][attack] = test_adv(
+                    results_dict_attack = test_adv(
                             images_adv, labels_adv, batch_size, model,
                             adv_model, test_config['adv']['daug_params'],
-                            test_config['adv']['attacks'][attack])
+                            attack_dict)
     else:
         aux_hdf5 = []
 
@@ -345,7 +361,8 @@ def test_rep(images, labels, batch_size, model, daug_params, repetitions,
 
     # Create batch generator
     image_gen = get_generator(images, **daug_params)
-    batch_gen = image_gen.flow(images, labels, batch_size, shuffle=False)
+    batch_gen = batch_generator(image_gen, images, labels, batch_size, 
+                                aug_per_im=1, shuffle=False)
 
     # Initialize matrix to store the predictions.
     predictions = np.zeros([n_images, n_classes, repetitions])
@@ -354,11 +371,10 @@ def test_rep(images, labels, batch_size, model, daug_params, repetitions,
     for r in range(repetitions):
         print('Run %d/%d' % (r+1, repetitions))
         init = 0
-        batch_gen.reset()
+        batch_gen.image_gen.reset()
         # Iterate over the whole data set batch by batch
         for _ in tqdm(range(n_batches_per_epoch)):
-            batch = batch_gen.next()
-            batch_images = batch[0]
+            batch_images, _ = next(batch_gen())
             batch_size = batch_images.shape[0]
             end = init + batch_size
             predictions[init:end, :, r] = \
@@ -473,7 +489,8 @@ def test_adv(images, labels, batch_size, model, adv_model, daug_params,
 
     # Create batch generator
     image_gen = get_generator(images, **daug_params)
-    batch_gen = image_gen.flow(images, labels, batch_size, shuffle=False)
+    batch_gen = batch_generator(image_gen, images, labels, batch_size, 
+                                aug_per_im=1, shuffle=False)
 
     # Define input TF placeholder
     if daug_params['crop_size']:
@@ -501,7 +518,7 @@ def test_adv(images, labels, batch_size, model, adv_model, daug_params,
     with sess.as_default():
         init = 0
         for _ in tqdm(range(n_batches_per_epoch)):
-            batch = batch_gen.next()
+            batch = next(batch_gen())
             this_batch_size = batch[0].shape[0]
 
             # Evaluate accuracy
@@ -585,7 +602,8 @@ def activations_norm(images, labels, batch_size, model, layer_regex,
 
     # Create batch generator
     image_gen = get_generator(images, **daug_params)
-    batch_gen = image_gen.flow(images, labels, batch_size, shuffle=False)
+    batch_gen = batch_generator(image_gen, images, labels, batch_size, 
+                                aug_per_im=1, shuffle=False)
 
     # Initialize list to store the mean norm of the activations
     results_dict = {'activations_norm': {}, 'summary': {}} 
@@ -606,10 +624,9 @@ def activations_norm(images, labels, batch_size, model, layer_regex,
                      'std': np.zeros(n_channels)} for n in norms}})
             layer_dict = results_dict['activations_norm'][layer_name]
             init = 0
-            batch_gen.reset()
+            batch_gen.image_gen.reset()
             for _ in tqdm(range(n_batches_per_epoch)):
-                batch = batch_gen.next()
-                batch_images = batch[0]
+                batch_images, _ = next(batch_gen())
                 batch_size = batch_images.shape[0]
                 end = init + batch_size
                 activations = get_output([batch_images, 0])[0]
