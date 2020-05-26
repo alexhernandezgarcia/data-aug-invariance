@@ -8,20 +8,20 @@ from __future__ import print_function
 
 import numpy as np
 
-import keras.backend as K
-from keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
-from keras.models import load_model
-from keras.optimizers import SGD
-from keras.metrics import top_k_categorical_accuracy
-from keras.layers import Input
-from keras.layers import Flatten, BatchNormalization
-from keras.layers import add, subtract, multiply, dot
-from keras.layers import Lambda
-from keras.layers import Activation, Dropout
-from keras.models import Model
-from keras.losses import mean_squared_error
+import tensorflow.compat.v1.keras.backend as K
+from tensorflow.compat.v1.keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
+from tensorflow.compat.v1.keras.models import load_model
+from tensorflow.compat.v1.keras.optimizers import SGD
+from tensorflow.compat.v1.keras.metrics import top_k_categorical_accuracy
+from tensorflow.compat.v1.keras.layers import Input
+from tensorflow.compat.v1.keras.layers import Flatten, BatchNormalization
+from tensorflow.compat.v1.keras.layers import add, subtract, multiply, dot
+from tensorflow.compat.v1.keras.layers import Lambda
+from tensorflow.compat.v1.keras.layers import Activation, Dropout
+from tensorflow.compat.v1.keras.models import Model
+from tensorflow.compat.v1.keras.losses import mean_squared_error
 
-import keras.losses
+import tensorflow.compat.v1.keras.losses
 
 from functools import partial, update_wrapper
 

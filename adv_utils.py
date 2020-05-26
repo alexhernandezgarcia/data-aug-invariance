@@ -3,9 +3,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import keras.backend as K
-import tensorflow as tf
-from keras.models import load_model
+import tensorflow.compat.v1.keras.backend as K
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.keras.models import load_model
 
 import numpy as np
 import h5py
@@ -18,7 +18,9 @@ from tqdm import tqdm
 
 import data_input
 from utils import pairwise_loss
-import keras.losses
+## Import the whole compat version of keras to set the losses =================
+import tensorflow.compat.v1.keras as keras
+## ============================================================================
 keras.losses.pairwise_loss = pairwise_loss
 keras.losses.custom_mse = pairwise_loss
 from surgery import del_mse_nodes, ensure_softmax_output

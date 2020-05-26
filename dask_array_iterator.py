@@ -10,7 +10,7 @@ from __future__ import print_function
 
 import numpy as np
 
-import keras.backend as K
+import tensorflow.compat.v1.keras.backend as K
 from keras_preprocessing.image.iterator import Iterator
 from keras_preprocessing.image.utils import array_to_img
 

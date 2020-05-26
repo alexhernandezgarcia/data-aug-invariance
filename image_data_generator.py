@@ -33,7 +33,7 @@ from image_transformations_ext import (
         adjust_contrast, rgb2lab, lab_noise, cutout)
 
 from dask_array_iterator import DaskArrayIterator
-import keras.backend as K
+import tensorflow.compat.v1.keras.backend as K
 
 class ImageDataGeneratorExt(ImageDataGenerator):
     """

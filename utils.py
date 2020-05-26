@@ -19,11 +19,11 @@ from data_input import validation_image_params, create_control_dataset
 from data_input import get_generator, batch_generator
 from activations import get_activations
 
-import keras.backend as K
-from keras.layers import Layer
-from keras.callbacks import Callback
-from keras.losses import categorical_crossentropy
-import tensorflow as tf
+import tensorflow.compat.v1.keras.backend as K
+from tensorflow.compat.v1.keras.layers import Layer
+from tensorflow.compat.v1.keras.callbacks import Callback
+from tensorflow.compat.v1.keras.losses import categorical_crossentropy
+import tensorflow.compat.v1 as tf
 
 class TrainingProgressLogger():
 
@@ -681,16 +681,16 @@ def handle_metrics(metrics):
     metric_names = []
     for metric in metrics:
         if metric.lower() in ('accuracy', 'acc', 'categorical_accuracy'):
-            from keras.metrics import categorical_accuracy
+            from tensorflow.compat.v1.keras.metrics import categorical_accuracy
             metric_funcs.append(categorical_accuracy)
             metric_names.append('acc')
         elif metric.lower() in ('mae', 'mean_absolute_error'):
-            from keras.losses import mean_absolute_error
+            from tensorflow.compat.v1.keras.losses import mean_absolute_error
             metric_funcs.append(mean_absolute_error)
             metric_names.append('mae')
         elif metric.lower().startswith('top'):
             k = int(metric[-1])
-            from keras.metrics import top_k_categorical_accuracy
+            from tensorflow.compat.v1.keras.metrics import top_k_categorical_accuracy
             metric_funcs.append(update_wrapper(
                 partial(top_k_categorical_accuracy, k=k), 
                         top_k_categorical_accuracy))

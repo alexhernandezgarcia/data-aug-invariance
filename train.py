@@ -5,14 +5,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import keras.backend as K
-from keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
-from keras.utils.generic_utils import Progbar
-from keras.callbacks import ProgbarLogger
-from keras.models import load_model
-from keras.models import Model
-from keras.optimizers import SGD, Adam
-from keras.metrics import top_k_categorical_accuracy
+import tensorflow.compat.v1.keras.backend as K
+from tensorflow.compat.v1.keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
+## Here keras.utils.generic_utils was replaces with just keras.utils ==========
+from tensorflow.compat.v1.keras.utils import Progbar
+# =============================================================================
+from tensorflow.compat.v1.keras.callbacks import ProgbarLogger
+from tensorflow.compat.v1.keras.models import load_model
+from tensorflow.compat.v1.keras.models import Model
+from tensorflow.compat.v1.keras.optimizers import SGD, Adam
+from tensorflow.compat.v1.keras.metrics import top_k_categorical_accuracy
 
 from functools import partial, update_wrapper
 
@@ -20,7 +22,7 @@ import numpy as np
 import h5py
 import yaml
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from data_input import dataset_characteristics, train_val_split
 from data_input import validation_image_params, get_generator

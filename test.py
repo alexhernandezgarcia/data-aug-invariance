@@ -8,9 +8,9 @@ from __future__ import print_function
 import numpy as np
 import dask.array as da
 import tensorflow as tf
-import keras.backend as K
-from keras.models import load_model
-from keras.models import Model
+import tensorflow.compat.v1.keras.backend as K
+from tensorflow.compat.v1.keras.models import load_model
+from tensorflow.compat.v1.keras.models import Model
 import h5py
 import yaml
 import sys
@@ -32,7 +32,9 @@ from utils import pairwise_loss, invariance_loss, mean_loss
 from utils import handle_metrics
 from utils import prepare_test_config, numpy_to_python
 from utils import print_test_results, write_test_results
-import keras.losses
+## Import the whole compat version of keras to set the losses =================
+import tensorflow.compat.v1.keras as keras
+## ============================================================================
 keras.losses.pairwise_loss = pairwise_loss
 keras.losses.invariance_loss = invariance_loss
 keras.losses.mean_loss = mean_loss
