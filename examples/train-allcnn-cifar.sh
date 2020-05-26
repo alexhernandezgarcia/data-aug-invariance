@@ -5,11 +5,12 @@
 #
 # CIFAR-10
 #
-# All-CNN 
+# All-CNN
 #
 # no-reg bn heavier no-inv
+
 python train.py \
---data_file ~/datasets/hdf5/cifar10.hdf5 \
+--data_file ~/Storage/Datasets/cifar10/hdf5/cifar10.hdf5 \
 --group_tr train \
 --group_val test \
 --train_dir ./log/cifar10/allcnn/noreg/bn/noinv/r0/ \
