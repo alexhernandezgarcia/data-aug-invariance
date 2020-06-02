@@ -7,9 +7,8 @@ from __future__ import print_function
 
 import tensorflow.compat.v1.keras.backend as K
 from tensorflow.compat.v1.keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
-## Here keras.utils.generic_utils was replaces with just keras.utils ==========
+## NOTE: Here keras.utils.generic_utils was replaced with just keras.utils
 from tensorflow.compat.v1.keras.utils import Progbar
-# =============================================================================
 from tensorflow.compat.v1.keras.callbacks import ProgbarLogger
 from tensorflow.compat.v1.keras.models import load_model
 from tensorflow.compat.v1.keras.models import Model
@@ -23,6 +22,8 @@ import h5py
 import yaml
 
 import tensorflow.compat.v1 as tf
+# Disable eager execution behaviour
+tf.disable_v2_behavior()
 
 from data_input import dataset_characteristics, train_val_split
 from data_input import validation_image_params, get_generator
@@ -529,7 +530,9 @@ def _model_setup(train_config, metrics, resume_training=None):
         loss_weights_tensors = None
 
     # Change metrics names
-    model = change_metrics_names(model, train_config.optimizer.invariance)
+    # NOTE: This fails because model has no attribute metrics_names
+    # in newer TF/Keras versions
+    #model = change_metrics_names(model, train_config.optimizer.invariance)
 
     if model_cat:
         model_cat = change_metrics_names(model_cat, False)

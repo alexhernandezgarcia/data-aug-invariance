@@ -23,7 +23,8 @@ from time import time
 from data_input import train_val_split, subsample_data
 from data_input import get_generator, batch_generator
 from data_input import generate_batches
-from adv_utils import init_attack
+# NOTE: Disabled this import because cleverhans fails with TF2
+# from adv_utils import init_attack
 from surgery import ablate_activations, del_mse_nodes, del_extra_nodes
 from surgery import network2dict, restore_nodes
 
@@ -32,9 +33,8 @@ from utils import pairwise_loss, invariance_loss, mean_loss
 from utils import handle_metrics
 from utils import prepare_test_config, numpy_to_python
 from utils import print_test_results, write_test_results
-## Import the whole compat version of keras to set the losses =================
-import tensorflow.compat.v1.keras as keras
-## ============================================================================
+# Import the whole compat version of keras to set the losses
+from tensorflow.compat.v1 import keras
 keras.losses.pairwise_loss = pairwise_loss
 keras.losses.invariance_loss = invariance_loss
 keras.losses.mean_loss = mean_loss

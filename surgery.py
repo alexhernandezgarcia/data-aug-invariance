@@ -532,6 +532,15 @@ def del_mse_nodes(model, log_file=None, verbose=1):
             
     # Delete all outputs except Softmax
     if len(model.outputs) > 1:
+        # NOTE: These attributes (model.output_layers, model.output_names etc.)
+        # do not exist anymore in newer Keras and the for-loop will not work. 
+        # Maybe the following works equivalently?
+        # for layer in model.outputs:
+        #     if 'softmax' in layer.name:
+        #         model.outputs = [layer]
+        #         break
+        #     else:
+        #         pass
         for layer, name, tensor, node_index, tensor_index in zip(
                     model.output_layers,
                     model.output_names,
@@ -551,6 +560,7 @@ def del_mse_nodes(model, log_file=None, verbose=1):
         # Delete node from categorical model
         del_nonrelevant_nodes(model)
 
+        # NOTE: This will also fail in newer Keras because output_layers does not exist
         del_extra_nodes(model.output_layers[0], model.output_layers[0])
         new_model = Model(inputs=model.input, outputs=model.outputs[0])
     else:
