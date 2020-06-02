@@ -50,6 +50,18 @@ import os
 import argparse
 import time
 
+# =============================================================================
+# Fix CuDNN issues with RTX cards: there is an issue with TF2 that it doesn't
+# allocate enough VRAM and then fails to load CuDNN. We need to manually
+# allow growing memory allocation.
+from tensorflow.compat.v1.keras.backend import set_session
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+# config.gpu_options.per_process_gpu_memory_fraction = 0.8
+set_session(tf.Session(config=config))
+# =============================================================================
+
+
 # Initialize the Flags container
 FLAGS = None
 
