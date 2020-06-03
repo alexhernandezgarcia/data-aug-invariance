@@ -5,22 +5,25 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import keras.backend as K
-from keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
-from keras.utils.generic_utils import Progbar
-from keras.callbacks import ProgbarLogger
-from keras.models import load_model
-from keras.models import Model
-from keras.optimizers import SGD, Adam
-from keras.metrics import top_k_categorical_accuracy
+import tensorflow.compat.v1.keras.backend as K
+from tensorflow.compat.v1.keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
+## NOTE: Here keras.utils.generic_utils was replaced with just keras.utils
+from tensorflow.compat.v1.keras.utils import Progbar
+from tensorflow.compat.v1.keras.callbacks import ProgbarLogger
+from tensorflow.compat.v1.keras.models import load_model
+from tensorflow.compat.v1.keras.models import Model
+from tensorflow.compat.v1.keras.optimizers import SGD, Adam
+from tensorflow.compat.v1.keras.metrics import top_k_categorical_accuracy
 
 from functools import partial, update_wrapper
-
-import tensorflow as tf
 
 import numpy as np
 import h5py
 import yaml
+
+import tensorflow.compat.v1 as tf
+# Disable eager execution behaviour
+tf.disable_v2_behavior()
 
 from data_input import dataset_characteristics, train_val_split
 from data_input import validation_image_params, get_generator
@@ -48,6 +51,18 @@ import os
 import argparse
 import time
 
+# =============================================================================
+# Fix CuDNN issues with RTX cards: there is an issue with TF2 that it doesn't
+# allocate enough VRAM and then fails to load CuDNN. We need to manually
+# allow growing memory allocation.
+from tensorflow.compat.v1.keras.backend import set_session
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+# config.gpu_options.per_process_gpu_memory_fraction = 0.8
+set_session(tf.Session(config=config))
+# =============================================================================
+
+
 # Initialize the Flags container
 FLAGS = None
 
@@ -55,7 +70,7 @@ FLAGS = None
 def main(argv=None):
 
     handle_train_dir(FLAGS.train_dir)
-    
+
     # Print and write the flag arguments
     print_flags(FLAGS)
     write_flags(FLAGS)
@@ -85,12 +100,12 @@ def main(argv=None):
 
     # Determine the train and validation sets
     images_tr, images_val, labels_tr, labels_val, aux_hdf5 = \
-            train_val_split(hdf5_file, 
+            train_val_split(hdf5_file,
                             train_config.data.group_tr,
-                            train_config.data.group_val, 
-                            train_config.data.chunk_size, 
-                            train_config.data.pct_tr, 
-                            train_config.data.pct_val, 
+                            train_config.data.group_val,
+                            train_config.data.chunk_size,
+                            train_config.data.pct_tr,
+                            train_config.data.pct_val,
                             seed=train_config.seeds.train_val,
                             shuffle=train_config.data.shuffle_train_val,
                             labels_id=train_config.data.labels_id)
@@ -120,11 +135,11 @@ def main(argv=None):
 
     # Read invariance paramters
     if train_config.optimizer.invariance:
-        with open(train_config.optimizer.daug_invariance_params_file, 
+        with open(train_config.optimizer.daug_invariance_params_file,
                   'r') as f_yml:
             train_config.optimizer.daug_invariance_params = yaml.load(
                     f_yml, Loader=yaml.FullLoader)
-        with open(train_config.optimizer.class_invariance_params_file, 
+        with open(train_config.optimizer.class_invariance_params_file,
                   'r') as f_yml:
             train_config.optimizer.class_invariance_params = yaml.load(
                     f_yml, Loader=yaml.FullLoader)
@@ -139,27 +154,27 @@ def main(argv=None):
     _model_print_save(model, FLAGS.train_dir)
 
     callbacks = _get_callbacks(train_config, FLAGS.train_dir,
-                               save_model_every=FLAGS.save_model_every, 
-                               track_gradients=FLAGS.track_gradients, 
-                               fmri_rdms=FLAGS.fmri_rdms, 
+                               save_model_every=FLAGS.save_model_every,
+                               track_gradients=FLAGS.track_gradients,
+                               fmri_rdms=FLAGS.fmri_rdms,
                                loss_weights=loss_weights)
 
     # Write training configuration to disk
     output_file = os.path.join(FLAGS.train_dir, 'train_config_' +
                                time.strftime('%a_%d_%b_%Y_%H%M%S') + '.yml')
     with open(output_file, 'w') as f:
-        yaml.dump(numpy_to_python(namespace2dict(train_config)), f, 
+        yaml.dump(numpy_to_python(namespace2dict(train_config)), f,
                   default_flow_style=False)
 
     # Initialize Training Progress Logger
     loggers = []
     if FLAGS.log_file_train:
         log_file = os.path.join(FLAGS.train_dir, FLAGS.log_file_train)
-        loggers.append(TrainingProgressLogger(log_file, model, train_config, 
+        loggers.append(TrainingProgressLogger(log_file, model, train_config,
                                               images_tr, labels_tr))
     if FLAGS.log_file_test:
         log_file = os.path.join(FLAGS.train_dir, FLAGS.log_file_test)
-        loggers.append(TrainingProgressLogger(log_file, model, train_config, 
+        loggers.append(TrainingProgressLogger(log_file, model, train_config,
                                               images_val, labels_val))
 
     # Train
@@ -176,7 +191,7 @@ def main(argv=None):
         test_config = prepare_test_config(test_config, FLAGS)
 
         test_results_dict = test(images_val, labels_val, images_tr, labels_tr,
-                                 model, test_config, 
+                                 model, test_config,
                                  train_config.train.batch_size.val,
                                  train_config.data.chunk_size)
 
@@ -184,7 +199,7 @@ def main(argv=None):
         output_file = os.path.join(FLAGS.train_dir, 'test_' +
                                    os.path.basename(FLAGS.test_config_file))
         with open(output_file, 'wb') as f:
-            yaml.dump(numpy_to_python(test_results_dict), f, 
+            yaml.dump(numpy_to_python(test_results_dict), f,
                       default_flow_style=False)
 
         # Write test results to TXT
@@ -203,7 +218,7 @@ def main(argv=None):
         os.remove(filename)
 
 
-def train(images_tr, labels_tr, images_val, labels_val, model, model_cat, 
+def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
           callbacks, train_config, loggers):
 
     # Create batch generators
@@ -212,9 +227,9 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
             image_gen_tr, images_tr, labels_tr,
             train_config.train.batch_size.gen_tr,
             aug_per_im=train_config.daug.aug_per_img_tr, shuffle=True,
-            seed=train_config.seeds.batch_shuffle, 
+            seed=train_config.seeds.batch_shuffle,
             n_inv_layers=train_config.optimizer.n_inv_layers)
-    image_gen_val = get_generator(images_val, 
+    image_gen_val = get_generator(images_val,
                                   **train_config.daug.daug_params_val)
     batch_gen_val = generate_batches(
             image_gen_val, images_val, labels_val,
@@ -306,8 +321,8 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
                 if batch_idx + 1 < progbar.target:
                     metrics_progbar = sel_metrics(
                             model.metrics_names, metrics,
-                            no_mean_metrics_progbar, 
-                            metrics_cat=metrics_names_cat) 
+                            no_mean_metrics_progbar,
+                            metrics_cat=metrics_names_cat)
                     metrics_progbar.extend(zip(metrics_names_cat,
                                                metrics_cat))
                     progbar.update(current=batch_idx + 1,
@@ -317,8 +332,8 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
                 if loggers:
                     metrics_log = sel_metrics(
                             model.metrics_names, metrics,
-                            no_mean=False, 
-                            metrics_cat=metrics_names_cat) 
+                            no_mean=False,
+                            metrics_cat=metrics_names_cat)
                     metrics_log.extend(zip(metrics_names_cat, metrics_cat))
                     for logger in loggers:
                         logger.log(metrics_log)
@@ -341,14 +356,14 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
 
             # Progress bar
             metrics_progbar = sel_metrics(
-                    model.metrics_names + metrics_names_val, 
-                    metrics + metrics_val, no_mean_metrics_progbar, 
+                    model.metrics_names + metrics_names_val,
+                    metrics + metrics_val, no_mean_metrics_progbar,
                     no_val_daug=train_config.daug.aug_per_img_val == 1)
             progbar.add(1, values=metrics_progbar)
 
             # Tensorboard
             metrics_names_tensorboard = list(progbar.sum_values.keys())
-            metrics_tensorboard = [metric[0] / float(metric[1]) for metric in 
+            metrics_tensorboard = [metric[0] / float(metric[1]) for metric in
                     progbar.sum_values.values()]
             for metric_name, metric in zip(
                     model.metrics_names + metrics_names_val,
@@ -357,14 +372,14 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
                     metrics_names_tensorboard.append(metric_name)
                     metrics_tensorboard.append(metric)
             metrics_tensorboard = sel_metrics(
-                    metrics_names_tensorboard, 
-                    metrics_tensorboard, no_mean=False, 
+                    metrics_names_tensorboard,
+                    metrics_tensorboard, no_mean=False,
                     no_val_daug=train_config.daug.aug_per_img_val > 1,
                     metrics_cat=[])
-            metrics_tensorboard = [list(item) for item in 
+            metrics_tensorboard = [list(item) for item in
                     zip(*metrics_tensorboard)]
-            write_tensorboard(callbacks['tensorboard'], 
-                              metrics_tensorboard[0], metrics_tensorboard[1], 
+            write_tensorboard(callbacks['tensorboard'],
+                              metrics_tensorboard[0], metrics_tensorboard[1],
                               epoch)
 
             for callback in callbacks.values():
@@ -387,7 +402,7 @@ def train(images_tr, labels_tr, images_val, labels_val, model, model_cat,
             logger.close()
 
     return history, model
-    
+
 
 def _model_setup(train_config, metrics, resume_training=None):
 
@@ -412,20 +427,20 @@ def _model_setup(train_config, metrics, resume_training=None):
                               optimizer=optimizer_cat,
                               metrics=metrics)
             model = model[0]
-        else: 
+        else:
             model = model[0]
             model_cat = None
     else:
         model_cat = None
 
     # Get invariance layers
-    inv_outputs = [output_name for output_name in model.output_names 
+    inv_outputs = [output_name for output_name in model.output_names
                    if '_inv' in output_name]
-    daug_inv_outputs = [output_name for output_name in inv_outputs 
+    daug_inv_outputs = [output_name for output_name in inv_outputs
                    if 'daug_' in output_name]
-    class_inv_outputs = [output_name for output_name in inv_outputs 
+    class_inv_outputs = [output_name for output_name in inv_outputs
                    if 'class_' in output_name]
-    mean_inv_outputs = [output_name for output_name in inv_outputs 
+    mean_inv_outputs = [output_name for output_name in inv_outputs
                    if 'mean_' in output_name]
     train_config.optimizer.n_inv_layers = len(daug_inv_outputs)
 
@@ -442,11 +457,11 @@ def _model_setup(train_config, metrics, resume_training=None):
         if FLAGS.no_inv_layers:
             no_inv_layers = [int(layer) - 1 for layer in FLAGS.no_inv_layers]
         daug_inv_loss_weights = get_invariance_loss_weights(
-                train_config.optimizer.daug_invariance_params, 
+                train_config.optimizer.daug_invariance_params,
                 train_config.optimizer.n_inv_layers,
                 no_inv_layers)
         class_inv_loss_weights = get_invariance_loss_weights(
-                train_config.optimizer.class_invariance_params, 
+                train_config.optimizer.class_invariance_params,
                 train_config.optimizer.n_inv_layers,
                 no_inv_layers)
         mean_inv_loss_weights = np.zeros(len(mean_inv_outputs))
@@ -459,15 +474,15 @@ def _model_setup(train_config, metrics, resume_training=None):
                                                           name='w_softmax')}
             {loss_weights_tensors.update(
                 {output: K.variable(weight, name='w_{}'.format(output))})
-                for output, weight 
+                for output, weight
                 in zip(daug_inv_outputs, daug_inv_loss_weights)}
             {loss_weights_tensors.update(
                 {output: K.variable(weight, name='w_{}'.format(output))})
-                for output, weight 
+                for output, weight
                 in zip(class_inv_outputs, class_inv_loss_weights)}
             {loss_weights_tensors.update(
                 {output: K.variable(weight, name='w_{}'.format(output))})
-                for output, weight 
+                for output, weight
                 in zip(mean_inv_outputs, mean_inv_loss_weights)}
             loss = {'softmax': weighted_loss(
                 train_config.optimizer.loss, loss_weights_tensors['softmax'])}
@@ -483,23 +498,23 @@ def _model_setup(train_config, metrics, resume_training=None):
             loss_weights = [1.] * len(model.outputs)
         else:
             loss = {'softmax': train_config.optimizer.loss}
-            {loss.update({output: invariance_loss}) for output 
+            {loss.update({output: invariance_loss}) for output
                     in daug_inv_outputs}
-            {loss.update({output: invariance_loss}) for output 
+            {loss.update({output: invariance_loss}) for output
                     in class_inv_outputs}
-            {loss.update({output: mean_loss}) for output 
+            {loss.update({output: mean_loss}) for output
                     in mean_inv_outputs}
             if 'output_inv' in model.outputs:
                 loss.update({'output_inv': None})
             loss_weights = {'softmax': loss_weight_cat}
             {loss_weights.update({output: loss_weight})
-                for output, loss_weight in zip(daug_inv_outputs, 
+                for output, loss_weight in zip(daug_inv_outputs,
                                            daug_inv_loss_weights)}
             {loss_weights.update({output: loss_weight})
-                for output, loss_weight in zip(class_inv_outputs, 
+                for output, loss_weight in zip(class_inv_outputs,
                                            class_inv_loss_weights)}
             {loss_weights.update({output: loss_weight})
-                for output, loss_weight in zip(mean_inv_outputs, 
+                for output, loss_weight in zip(mean_inv_outputs,
                                            mean_inv_loss_weights)}
             loss_weights_tensors = None
 
@@ -515,7 +530,9 @@ def _model_setup(train_config, metrics, resume_training=None):
         loss_weights_tensors = None
 
     # Change metrics names
-    model = change_metrics_names(model, train_config.optimizer.invariance)
+    # NOTE: This fails because model has no attribute metrics_names
+    # in newer TF/Keras versions
+    #model = change_metrics_names(model, train_config.optimizer.invariance)
 
     if model_cat:
         model_cat = change_metrics_names(model_cat, False)
@@ -526,7 +543,7 @@ def _model_setup(train_config, metrics, resume_training=None):
 def _model_init(train_config):
     if train_config.network.name == 'allcnn':
         model = networks.allcnn(
-                    train_config.data.image_shape, 
+                    train_config.data.image_shape,
                     train_config.data.n_classes,
                     dropout=train_config.network.reg.dropout,
                     weight_decay=train_config.network.reg.weight_decay,
@@ -535,7 +552,7 @@ def _model_init(train_config):
                     id_output=train_config.optimizer.invariance)
     elif train_config.network.name == 'allcnn_large':
         model = networks.allcnn_large(
-                    train_config.data.image_shape, 
+                    train_config.data.image_shape,
                     train_config.data.n_classes,
                     dropout=train_config.network.reg.dropout,
                     weight_decay=train_config.network.reg.weight_decay,
@@ -545,7 +562,7 @@ def _model_init(train_config):
                     stride_conv1=train_config.network.stride_conv1)
     elif train_config.network.name == 'allcnn_mnist':
         model = networks.allcnn_mnist(
-                    train_config.data.image_shape, 
+                    train_config.data.image_shape,
                     train_config.data.n_classes,
                     dropout=train_config.network.reg.dropout,
                     weight_decay=train_config.network.reg.weight_decay,
@@ -554,7 +571,7 @@ def _model_init(train_config):
                     id_output=train_config.optimizer.invariance)
     elif train_config.network.name == 'wrn':
         model = networks.wrn(
-                    train_config.data.image_shape, 
+                    train_config.data.image_shape,
                     train_config.data.n_classes,
                     dropout=train_config.network.reg.dropout,
                     weight_decay=train_config.network.reg.weight_decay,
@@ -564,7 +581,7 @@ def _model_init(train_config):
                     id_output=train_config.optimizer.invariance)
     elif train_config.network.name == 'wrn_imagenet':
         model = networks.wrn(
-                    train_config.data.image_shape, 
+                    train_config.data.image_shape,
                     train_config.data.n_classes,
                     dropout=train_config.network.reg.dropout,
                     weight_decay=train_config.network.reg.weight_decay,
@@ -574,7 +591,7 @@ def _model_init(train_config):
                     stride_conv1=2)
     elif train_config.network.name == 'densenet':
         model = networks.densenet(
-                    train_config.data.image_shape, 
+                    train_config.data.image_shape,
                     train_config.data.n_classes,
                     train_config.network.blocks,
                     train_config.network.growth_rate,
@@ -585,7 +602,7 @@ def _model_init(train_config):
                     id_output=train_config.optimizer.invariance)
     elif train_config.network.name == 'lenet':
         model = networks.lenet(
-                    train_config.data.image_shape, 
+                    train_config.data.image_shape,
                     train_config.data.n_classes,
                     dropout=train_config.network.reg.dropout,
                     weight_decay=train_config.network.reg.weight_decay,
@@ -595,7 +612,7 @@ def _model_init(train_config):
         raise(NotImplementedError('Only networks implemented are allcnn'
                                   'and wrn'))
 
-    return model        
+    return model
 
 
 def _model_print_save(model, output_dir):
@@ -631,7 +648,7 @@ def _get_optimizer(optimizer_params, init_lr):
 
 
 def _get_callbacks(train_config, output_dir, save_model_every,
-                   track_gradients=False, fmri_rdms=None, 
+                   track_gradients=False, fmri_rdms=None,
                    stateful_metrics=None, loss_weights=None):
     callbacks = {}
 
@@ -641,7 +658,7 @@ def _get_callbacks(train_config, output_dir, save_model_every,
         if train_config.train.epochs != train_config.train.epochs_orig:
             mult = float(train_config.train.epochs) / \
                    train_config.train.epochs_orig
-            train_config.train.lr.decay_epochs = [int(d * mult) 
+            train_config.train.lr.decay_epochs = [int(d * mult)
                     for d in train_config.train.lr.decay_epochs]
         lr_decay_schedule = lr_decay(train_config.train.lr.init_lr,
                                      train_config.train.lr.decay_factor,
@@ -763,10 +780,10 @@ def lr_decay(initial_lr, lr_decay_factor, key_epochs):
     return lr_decay_schedule
 
 
-def get_invariance_loss_weights(invariance_params, n_inv_layers, 
+def get_invariance_loss_weights(invariance_params, n_inv_layers,
                                 zero_loss_layers=[]):
     """
-    Determines the weight of the loss function for each invariance layer, 
+    Determines the weight of the loss function for each invariance layer,
     according to the parameters file
 
     Parameters
@@ -796,13 +813,13 @@ def get_invariance_loss_weights(invariance_params, n_inv_layers,
         inv_loss_weights = n_inv_layers * \
                      [invariance_params['pct_loss'] / n_inv_layers]
     elif invariance_params['distr'] == 'linear':
-        inv_loss_weights = np.linspace(start=1., 
-                                       stop=invariance_params['diff_max_min'], 
+        inv_loss_weights = np.linspace(start=1.,
+                                       stop=invariance_params['diff_max_min'],
                                        num=n_inv_layers)
         inv_loss_weights /= np.sum(inv_loss_weights)
         inv_loss_weights *= invariance_params['pct_loss']
     elif invariance_params['distr'] == 'exponential':
-        inv_loss_weights = np.logspace(start=0., 
+        inv_loss_weights = np.logspace(start=0.,
                                        stop=1.,
                                        base=invariance_params['diff_max_min'],
                                        num=n_inv_layers)

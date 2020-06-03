@@ -4,18 +4,20 @@ Implementation of network architectures
 from __future__ import absolute_import
 from __future__ import print_function
 
-import keras.backend as K
-from keras.models import Model
-from keras.layers import Input
-from keras.layers import Conv2D, BatchNormalization, GlobalAveragePooling2D
-from keras.layers import GRU, CuDNNGRU, Bidirectional
-from keras.layers import Reshape, RepeatVector
-from keras.layers import AveragePooling2D, Lambda, Flatten, Dense
-from keras.layers import ZeroPadding2D, MaxPooling2D
-from keras.layers import Activation, Dropout
-from keras.layers.merge import add, Concatenate
-from keras.regularizers import l2
-from keras.initializers import Constant, TruncatedNormal
+import tensorflow.compat.v1.keras.backend as K
+from tensorflow.compat.v1.keras.models import Model
+from tensorflow.compat.v1.keras.layers import Input
+from tensorflow.compat.v1.keras.layers import Conv2D, BatchNormalization, GlobalAveragePooling2D
+from tensorflow.compat.v1.keras.layers import GRU, CuDNNGRU, Bidirectional
+from tensorflow.compat.v1.keras.layers import Reshape, RepeatVector
+from tensorflow.compat.v1.keras.layers import AveragePooling2D, Lambda, Flatten, Dense
+from tensorflow.compat.v1.keras.layers import ZeroPadding2D, MaxPooling2D
+from tensorflow.compat.v1.keras.layers import Activation, Dropout
+## add and Concatenate now also live in the 'layers' module, not in layers.merge
+from tensorflow.compat.v1.keras.layers import add, Concatenate
+## ============================================================================
+from tensorflow.compat.v1.keras.regularizers import l2
+from tensorflow.compat.v1.keras.initializers import Constant, TruncatedNormal
 
 
 def allcnn(image_shape, n_classes, dropout=None, weight_decay=None,

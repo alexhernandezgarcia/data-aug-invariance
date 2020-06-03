@@ -9,13 +9,13 @@ import numpy as np
 from skimage import color as skico
 from scipy.stats import truncnorm
 
-import keras.backend as K
+import tensorflow.compat.v1.keras.backend as K
 
 
 def truncnorm_cent_2std(min_val, max_val, size=None):
     """
     Generates n random samples from a truncated normal distribution within the
-    range (min_val, max_val), with mean centered within the interval and 
+    range (min_val, max_val), with mean centered within the interval and
     standard deviation such that the interval covers 2 sigmas (95 %) of the
     normal distribution.
 

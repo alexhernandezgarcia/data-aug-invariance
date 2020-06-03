@@ -26,7 +26,7 @@ import dask
 from data_input import hdf52dask, get_generator
 from data_input import batch_generator
 
-import keras.backend as K
+import tensorflow.compat.v1.keras.backend as K
 
 import os
 import argparse
