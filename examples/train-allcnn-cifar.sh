@@ -5,7 +5,7 @@
 #
 # CIFAR-10
 #
-# All-CNN 
+# All-CNN
 #
 # no-reg bn heavier no-inv
 python train.py \
