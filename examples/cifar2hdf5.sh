@@ -4,5 +4,5 @@
 # Consider changing the paths to files and directories
 #
 python datasets/cifar2hdf5.py \
---output_file ~/Storage/Datasets/cifar10/hdf5/cifar10.hdf5 \
---download_dir ~/Storage/Datasets/cifar10/
+--output_file ~/datasets/hdf5/cifar10.hdf5 \
+--download_dir ~/datasets/
