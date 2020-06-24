@@ -1240,6 +1240,230 @@ def lenet(image_shape, n_classes, return_logits=False, dropout=False,
     return model
 
 
+def khonsu(image_shape, n_classes, dropout=0., weight_decay=None,
+           batch_norm=False, invariance=True):
+    """
+    A shallow convolutional neural network
+
+    Parameters
+    ----------
+    image_shape : int list
+        Shape of the input images
+
+    n_classes : int
+        Number of classes in the training data set
+
+    dropout : float
+        The drop rate for Dropout after the convolutional layers.
+
+    weight_decay : float
+        L2 factor for the weight decay regularization or None
+
+    batch_norm : bool
+        If True, batch normalization is added after every convolutional layer
+
+    invariance : bool
+        If True, a matrix of squared pairwise distances will be computed with
+        the activations of each convoltional layer (after ReLU) and appended as
+        output of the model.
+
+    Returns
+    -------
+    model : Model
+        Keras model describing the architecture
+    """
+
+    def conv_layer(x, mse_list, filters, kernel, stride, padding, n_layer):
+        """
+        Defines a convolutional block, formed by a convolutional layer, an
+        optional batch normalization layer and a ReLU activation.
+
+        Parameters
+        ----------
+        x : Tensor
+            The input to the convolutional layer
+
+        filters : int
+            Number of filters (width) of the convolutional layer
+
+        kernel : int
+            Kernel size
+
+        stride : int
+            Stride of the convolution
+
+        n_layer : int
+            Layer number, with respect to the whole network
+        
+        Returns
+        -------
+        x : Tensor
+            Output of the convolutional block
+        """
+        # Convolution
+        x = Conv2D(filters=filters,
+                   kernel_size=(kernel, kernel),
+                   strides=(stride, stride),
+                   padding=padding,
+                   activation='linear',   
+                   use_bias=False,
+                   kernel_initializer='he_normal',
+                   kernel_regularizer=l2reg(weight_decay),   
+                   input_shape=image_shape,
+                   name='conv{}'.format(n_layer))(x)
+        
+        # Batch Normalization
+        if batch_norm:
+            x = BatchNormalization(axis=3, 
+                                   epsilon=1.001e-5,
+                                   gamma_regularizer=l2reg(weight_decay),
+                                   beta_regularizer=l2reg(weight_decay),
+                                   name='conv{}bn'.format(n_layer))(x)
+
+        # ReLU Activation
+        x = Activation('relu', name='conv{}relu'.format(n_layer))(x)    
+
+        # MSE layer: matrix of squared pairwise distances of the activations
+        if invariance:
+            x_flatten = Flatten()(x)
+            mse = Lambda(pairwise_mse, 
+                         name='conv{}mse'.format(n_layer))(x_flatten)
+            daug_inv = Lambda(lambda x: x,
+                              name='daug_inv{}'.format(n_layer))(mse)
+            class_inv = Lambda(lambda x: x,
+                               name='class_inv{}'.format(n_layer))(mse)
+            mean_inv = Lambda(lambda x: K.expand_dims(K.mean(x, axis=1)),
+                               name='mean_inv{}'.format(n_layer))(mse)
+            mse_list.append(daug_inv)
+            mse_list.append(class_inv)
+            mse_list.append(mean_inv)
+
+        return x, mse_list
+
+    def fc_layer(x, mse_list, units, n_layer):
+        """
+        Defines a fully connected block, formed by a fully connected layer, an
+        optional batch normalization layer and a ReLU activation.
+
+        Parameters
+        ----------
+        x : Tensor
+            The input to the convolutional layer
+
+        units : int
+            Number of neurons in the layer
+
+        n_layer : int
+            Layer number, with respect to the whole network
+        
+        Returns
+        -------
+        x : Tensor
+            Output of the convolutional block
+        """
+        # Fully connected layer
+        x = Dense(units=units, 
+                  activation='linear', 
+                  use_bias=True, 
+                  kernel_initializer='he_normal', 
+                  bias_initializer='zeros',
+                  name='fc{}'.format(n_layer))(x)
+        
+        # Batch Normalization
+        if batch_norm:
+            x = BatchNormalization(axis=1, 
+                                   epsilon=1.001e-5,
+                                   gamma_regularizer=l2reg(weight_decay),
+                                   beta_regularizer=l2reg(weight_decay),
+                                   name='fc{}bn'.format(n_layer))(x)
+
+        # ReLU Activation
+        x = Activation('relu', name='fc{}relu'.format(n_layer))(x)    
+
+        # MSE layer: matrix of squared pairwise distances of the activations
+        if invariance:
+            mse = Lambda(pairwise_mse, 
+                         name='fc{}mse'.format(n_layer))(x)
+            daug_inv = Lambda(lambda x: x,
+                              name='daug_inv{}'.format(n_layer))(mse)
+            class_inv = Lambda(lambda x: x,
+                               name='class_inv{}'.format(n_layer))(mse)
+            mean_inv = Lambda(lambda x: K.expand_dims(K.mean(x, axis=1)),
+                               name='mean_inv{}'.format(n_layer))(mse)
+            mse_list.append(daug_inv)
+            mse_list.append(class_inv)
+            mse_list.append(mean_inv)
+
+        return x, mse_list
+
+    inputs = Input(shape=image_shape, name='input')
+    mse_list = []
+
+    # Conv. layer: 100 filters, stride 2
+    x, mse_list = conv_layer(inputs, mse_list, filters=100, kernel=3, stride=2, 
+                        padding='same', n_layer=1)
+
+    if dropout > 0.:
+        x = Dropout(rate=dropout, name='dropout1')(x)
+
+    # Conv. layer: 75 filters, stride 2
+    x, mse_list = conv_layer(x, mse_list, filters=75, kernel=3, stride=2, 
+                        padding='same', n_layer=2)
+
+    if dropout > 0.:
+        x = Dropout(rate=dropout, name='dropout2')(x)
+
+    # Conv. layer: 50 filters, stride 2
+    x, mse_list = conv_layer(x, mse_list, filters=50, kernel=3, stride=2, 
+                        padding='same', n_layer=3)
+
+    if dropout > 0.:
+        x = Dropout(rate=dropout, name='dropout3')(x)
+
+    # Conv. layer: 25 filters, stride 2
+    x, mse_list = conv_layer(x, mse_list, filters=25, kernel=3, stride=2, 
+                        padding='same', n_layer=4)
+
+    if dropout > 0.:
+        x = Dropout(rate=dropout, name='dropout4')(x)
+
+    # Dense Layer
+    x = Flatten(name='flatten_conv_to_fc')(x)
+    x, mse_list = fc_layer(x, mse_list, n_classes, n_layer=5)
+
+    output_inv = Lambda(lambda x: x, name='output_inv')(x)
+    input_cat = Input(shape=(K.int_shape(output_inv)[-1], ), name='input_cat')
+
+    # Logits
+    logits = Dense(n_classes, activation='linear', use_bias=True, 
+                   kernel_initializer='he_normal', bias_initializer='zeros',
+                   name='logits')
+
+    logits_inv = logits(output_inv)
+    logits_cat = logits(input_cat)
+
+    # Softmax
+    softmax = Activation('softmax', name='softmax')
+    predictions_inv = softmax(logits_inv)
+    predictions_cat = softmax(logits_cat)
+
+    if len(mse_list) == 0:
+        return Model(inputs=inputs, outputs=predictions_inv)
+    else:
+
+        # Invariance model
+        model_inv = Model(inputs=inputs, 
+                          outputs=[output_inv, predictions_inv] + mse_list,
+                          name='model_inv')
+
+        # Categorization model
+        model_cat = Model(inputs=input_cat, 
+                          outputs=predictions_cat,
+                          name='model_cat')
+
+        return [model_inv, model_cat]
+
+
 def pairwise_mse(x):
     # See https://stackoverflow.com/a/37040451
     # Possibly more efficient, sparse solution:

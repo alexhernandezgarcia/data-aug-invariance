@@ -608,9 +608,16 @@ def _model_init(train_config):
                     weight_decay=train_config.network.reg.weight_decay,
                     batch_norm=train_config.network.batch_norm,
                     id_output=train_config.optimizer.invariance)
+    elif train_config.network.name == 'khonsu':
+        model = networks.khonsu(
+                    train_config.data.image_shape, 
+                    train_config.data.n_classes,
+                    dropout=train_config.network.reg.dropout,
+                    weight_decay=train_config.network.reg.weight_decay,
+                    batch_norm=train_config.network.batch_norm,
+                    invariance=train_config.optimizer.invariance)
     else:
-        raise(NotImplementedError('Only networks implemented are allcnn'
-                                  'and wrn'))
+        raise(NotImplementedError('Network name not implemented'))
 
     return model
 
